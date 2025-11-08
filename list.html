@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Meta -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#330072" />
+  <meta name="description" content="Blake's Christmas 2024–2025 — the beautifully organized master list with links, images, and notes." />
+  <title>Blake — The List</title>
+
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body class="theme">
+  <!-- =========================================================
+       NAV
+  ========================================================== -->
+  <header class="nav" role="banner">
+    <div class="brand">BLAKE</div>
+    <nav aria-label="Primary">
+      <a href="./index.html" class="btn ghost">Back to Story</a>
+    </nav>
+  </header>
+
+  <!-- =========================================================
+       FILTERS
+  ========================================================== -->
+  <section class="card" style="max-width:1080px;margin:18px auto;">
+    <h2 style="margin-top:.2em">The Master List</h2>
+    <p style="margin:.25em 0 1em;color:#4a415f">Same order as the presentation. Tap filters to narrow, or export for PDF.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+      <div class="badge">Filters</div>
+      <select id="fCategory" aria-label="Category" class="badge" style="padding:8px 10px">
+        <option value="">All categories</option>
+        <option>Car</option>
+        <option>Style</option>
+        <option>Accessories</option>
+        <option>Fragrance</option>
+        <option>Tech</option>
+        <option>Experience</option>
+        <option>Home</option>
+        <option>Games</option>
+        <option>Wellness</option>
+      </select>
+      <select id="fPriority" aria-label="Priority" class="badge" style="padding:8px 10px">
+        <option value="">Any priority</option>
+        <option>High</option>
+        <option>Mid</option>
+        <option>Low</option>
+      </select>
+      <select id="fTiming" aria-label="Now or Later" class="badge" style="padding:8px 10px">
+        <option value="">Now or later</option>
+        <option>Now</option>
+        <option>Later</option>
+      </select>
+      <button id="clearFilters" class="btn ghost" type="button" style="margin-left:auto">Clear</button>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       LIST (EXACT ORDER 1→47)
+  ========================================================== -->
+  <main class="list" id="list" role="list">
+    <!-- 1 -->
+    <article class="gift" role="listitem"
+      data-order="1" data-category="Car" data-priority="High" data-when="Now">
+      <img src="./assets/s63_3q.jpg" alt="S63 AMG Cabriolet — front three-quarter" />
+      <div class="txt">
+        <h3>2017 Mercedes-Benz S63 AMG Cabriolet</h3>
+        <p>Statement arrival. Convertible comfort. Burmester 3D sound — the dream.</p>
+        <div class="links">
+          <a target="_blank" href="https://example.com/dealer">Dealer</a>
+          <a target="_blank" href="https://example.com/cars">Cars.com</a>
+        </div>
+      </div>
+    </article>
+
+    <!-- 2 -->
+    <article class="gift" data-order="2" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/oc_drivers_sand.jpg" alt="Oliver Cabell Drivers in sand suede" />
+      <div class="txt">
+        <h3>Oliver Cabell Drivers — Sand Suede</h3>
+        <p>Old-money leisure energy. Perfect with linen, chinos, and summer suits.</p>
+      </div>
+    </article>
+
+    <!-- 3 -->
+    <article class="gift" data-order="3" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/lf_cashmere_hoodie_blue.jpg" alt="Luca Faloni cashmere hoodie in French Blue" />
+      <div class="txt">
+        <h3>Luca Faloni Cashmere Hoodie — French Blue</h3>
+        <p>Cloud-soft, durable cashmere for travel and study days.</p>
+      </div>
+    </article>
+
+    <!-- 4 -->
+    <article class="gift" data-order="4" data-category="Accessories" data-priority="Mid" data-when="Later">
+      <img src="./assets/bulova_sutton.jpg" alt="Bulova Sutton two-tone" />
+      <div class="txt">
+        <h3>Bulova Sutton — Two-Tone</h3>
+        <p>Classic dress watch vibe—clean indices, elegant case, everyday-ready.</p>
+      </div>
+    </article>
+
+    <!-- 5 -->
+    <article class="gift" data-order="5" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/portofino_sage.jpg" alt="Portofino linen shirt in sage" />
+      <div class="txt">
+        <h3>Portofino Linen Shirts — Sage • Lemon • Sky • Black</h3>
+        <p>Breathable, sharp, and versatile—warm weather uniform.</p>
+      </div>
+    </article>
+
+    <!-- 6 -->
+    <article class="gift" data-order="6" data-category="Accessories" data-priority="High" data-when="Now">
+      <img src="./assets/clubmaster_black_gold.png" alt="Ray-Ban Clubmaster black/gold G-15" />
+      <div class="txt">
+        <h3>Ray-Ban Clubmaster — Black/Gold (G-15)</h3>
+        <p>Timeless profile, subtle gold pop, perfect for suits and tees.</p>
+      </div>
+    </article>
+
+    <!-- 7 -->
+    <article class="gift" data-order="7" data-category="Fragrance" data-priority="High" data-when="Now">
+      <img src="./assets/herod.jpg" alt="Herod by Parfums de Marly" />
+      <div class="txt">
+        <h3>Parfums de Marly — Herod</h3>
+        <p>Warm tobacco-vanilla presence—leaves a refined memory in every room.</p>
+      </div>
+    </article>
+
+    <!-- 8 -->
+    <article class="gift" data-order="8" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/cream_blazer.jpg" alt="Cream linen blazer" />
+      <div class="txt">
+        <h3>Cream Linen Blazer — French Crown</h3>
+        <p>Summer-formal essential. Breathes like linen, looks like a promotion.</p>
+      </div>
+    </article>
+
+    <!-- 9 -->
+    <article class="gift" data-order="9" data-category="Style" data-priority="Mid" data-when="Now">
+      <img src="./assets/golden_goose.jpg" alt="Golden Goose Super-Star LTD" />
+      <div class="txt">
+        <h3>Golden Goose Super-Star LTD</h3>
+        <p>Street art energy meets luxury finishing — dressed up or down.</p>
+      </div>
+    </article>
+
+    <!-- 10 -->
+    <article class="gift" data-order="10" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/lf_cashmere_joggers.jpg" alt="Cashmere joggers" />
+      <div class="txt">
+        <h3>Cashmere Joggers — Atlantic / Camel / Midnight</h3>
+        <p>Lounge elegance. Travel staple for long flights and late study blocks.</p>
+      </div>
+    </article>
+
+    <!-- 11 -->
+    <article class="gift" data-order="11" data-category="Style" data-priority="Mid" data-when="Later">
+      <img src="./assets/lf_zip_camel.jpg" alt="Cashmere zip cardigan Camel" />
+      <div class="txt">
+        <h3>Cashmere Zip Cardigan — Camel</h3>
+        <p>Layer that reads “grown”—over tees, shirts, or a polo.</p>
+      </div>
+    </article>
+
+    <!-- 12 -->
+    <article class="gift" data-order="12" data-category="Style" data-priority="Mid" data-when="Later">
+      <img src="./assets/lf_zip_nocciola.jpg" alt="Cashmere zip cardigan Nocciola" />
+      <div class="txt">
+        <h3>Cashmere Zip Cardigan — Nocciola</h3>
+        <p>Rich neutral tone that works with navy, charcoal, and taupe.</p>
+      </div>
+    </article>
+
+    <!-- 13 -->
+    <article class="gift" data-order="13" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/lf_chunky_blue.jpg" alt="Chunky knit blue" />
+      <div class="txt">
+        <h3>Chunky Knit — Blue</h3>
+        <p>Texture and presence—adds depth to colder-weather fits.</p>
+      </div>
+    </article>
+
+    <!-- 14–18 Blazer/V-neck/Polo cluster kept in order as in story -->
+    <article class="gift" data-order="14" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/blazer_black_gold.jpg" alt="Black blazer with gold embroidery" />
+      <div class="txt"><h3>Black Blazer — Gold Embroidery</h3><p>Evening statement. Camera loves it.</p></div>
+    </article>
+    <article class="gift" data-order="15" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/blazer_british_3pc.jpg" alt="British three-piece" />
+      <div class="txt"><h3>British Three-Piece</h3><p>Boardroom-ready. Sharp lines, classic waistcoat.</p></div>
+    </article>
+    <article class="gift" data-order="16" data-category="Style" data-priority="High" data-when="Later">
+      <img src="./assets/blazer_pinstripe.jpg" alt="Navy pinstripe" />
+      <div class="txt"><h3>Navy Pinstripe</h3><p>Power suit DNA with modern cut.</p></div>
+    </article>
+    <article class="gift" data-order="17" data-category="Style" data-priority="Mid" data-when="Later">
+      <img src="./assets/blazer_velvet.jpg" alt="Velvet tuxedo" />
+      <div class="txt"><h3>Velvet Tuxedo</h3><p>Black-tie drama—soft luster, perfect for winter events.</p></div>
+    </article>
+    <article class="gift" data-order="18" data-category="Style" data-priority="Mid" data-when="Now">
+      <img src="./assets/blazer_windowpane.jpg" alt="Cream windowpane" />
+      <div class="txt"><h3>Cream Windowpane</h3><p>Light grid, high elegance. Great with loafers.</p></div>
+    </article>
+
+    <!-- 19 -->
+    <article class="gift" data-order="19" data-category="Style" data-priority="Mid" data-when="Later">
+      <img src="./assets/velvet_brown.jpg" alt="Velvet blazer brown" />
+      <div class="txt">
+        <h3>Velvet Blazer — Brown</h3>
+        <p>Rich tone. Directional sheen (insane under warm light).</p>
+      </div>
+    </article>
+
+    <!-- 20–22 -->
+    <article class="gift" data-order="20" data-category="Accessories" data-priority="Mid" data-when="Later">
+      <img src="./assets/collar_bar.jpg" alt="Collar bar" />
+      <div class="txt"><h3>Collar Bar</h3><p>Old-school polish. Frames the tie knot perfectly.</p></div>
+    </article>
+    <article class="gift" data-order="21" data-category="Accessories" data-priority="Mid" data-when="Later">
+      <img src="./assets/lapel_chain.jpg" alt="Lapel chain" />
+      <div class="txt"><h3>Lapel Chain</h3><p>Subtle sparkle for formal nights.</p></div>
+    </article>
+    <article class="gift" data-order="22" data-category="Accessories" data-priority="Low" data-when="Later">
+      <img src="./assets/pocket_watch_chain.jpg" alt="Pocket watch chain" />
+      <div class="txt"><h3>Pocket Watch Chain</h3><p>Vintage flourish—pairs with the three-piece.</p></div>
+    </article>
+
+    <!-- 23 -->
+    <article class="gift" data-order="23" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/suits_blueprint.jpg" alt="Suits system blueprint" />
+      <div class="txt">
+        <h3>Suits System — Shirts, Squares, Ties</h3>
+        <p>Mix-and-match capsule to nail every event without thinking.</p>
+      </div>
+    </article>
+
+    <!-- 24 -->
+    <article class="gift" data-order="24" data-category="Style" data-priority="Mid" data-when="Later">
+      <img src="./assets/purple_velvet.jpg" alt="Purple velvet jacket" />
+      <div class="txt">
+        <h3>Purple Velvet Jacket — StudioSuits</h3>
+        <p>Playful drama. Rich purple that photographs insanely well.</p>
+      </div>
+    </article>
+
+    <!-- 25–26 -->
+    <article class="gift" data-order="25" data-category="Style" data-priority="High" data-when="Now">
+      <img src="./assets/lightweight_chinos.jpg" alt="Lightweight chinos" />
+      <div class="txt"><h3>Lightweight Chinos</h3><p>Core base for summer looks and travel days.</p></div>
+    </article>
+    <article class="gift" data-order="26" data-category="Accessories" data-priority="High" data-when="Now">
+      <img src="./assets/cashmere_scarf_black.jpg" alt="Cashmere scarf" />
+      <div class="txt"><h3>Cashmere Scarf — Black</h3><p>Minimal, ultra-soft, goes with everything.</p></div>
+    </article>
+
+    <!-- 27 -->
+    <article class="gift" data-order="27" data-category="Games" data-priority="Mid" data-when="Later">
+      <img src="./assets/board_dominion.jpg" alt="Dominion" />
+      <div class="txt">
+        <h3>Board Games — Strategy Set</h3>
+        <p>Dominion • Scythe • Ark Nova • Terraforming Mars (and more).</p>
+      </div>
+    </article>
+
+    <!-- 28 -->
+    <article class="gift" data-order="28" data-category="Experience" data-priority="High" data-when="Later">
+      <img src="./assets/ultima_rs.jpg" alt="Ultima RS" />
+      <div class="txt">
+        <h3>Ultima RS — Father & Son Build (5-Year)</h3>
+        <p>Legacy project. Carbon options, LT5 heart, patience and skill.</p>
+      </div>
+    </article>
+
+    <!-- 29 -->
+    <article class="gift" data-order="29" data-category="Experience" data-priority="High" data-when="Now">
+      <img src="./assets/ferrari_296.jpg" alt="Ferrari 296" />
+      <div class="txt">
+        <h3>Las Vegas Exotics + Karting</h3>
+        <p>Track day with Ferrari 296, GT2 RS, STO, McLaren GT4 • Two kart races.</p>
+      </div>
+    </article>
+
+    <!-- 30 -->
+    <article class="gift" data-order="30" data-category="Tech" data-priority="High" data-when="Now">
+      <img src="./assets/curve_flex.jpg" alt="Curve Flex" />
+      <div class="txt">
+        <h3>Desk Trio — Curve Flex • NuPhy Air75 • MX Master 3</h3>
+        <p>Ergonomic, fast, beautiful — tools that keep me productive.</p>
+      </div>
+    </article>
+
+    <!-- 31 -->
+    <article class="gift" data-order="31" data-category="Experience" data-priority="Mid" data-when="Later">
+      <img src="./assets/dubai_board.jpg" alt="Dubai trip moodboard" />
+      <div class="txt">
+        <h3>Dubai Trip — Moodboard</h3>
+        <p>A skyline worth chasing. Architecture, lights, and memories.</p>
+      </div>
+    </article>
+
+    <!-- 32–35 -->
+    <article class="gift" data-order="32" data-category="Style" data-priority="Low" data-when="Later">
+      <img src="./assets/rl_cable.jpg" alt="Ralph Lauren cable-knit" />
+      <div class="txt"><h3>Cable-Knit (RL)</h3><p>Chunky texture with tailored trousers.</p></div>
+    </article>
+    <article class="gift" data-order="33" data-category="Style" data-priority="Low" data-when="Later">
+      <img src="./assets/brooks_cable.jpg" alt="Brooks Brothers cable-knit" />
+      <div class="txt"><h3>Cable-Knit (Brooks Brothers)</h3><p>Classic prep with modern fit.</p></div>
+    </article>
+    <article class="gift" data-order="34" data-category="Accessories" data-priority="Mid" data-when="Later">
+      <img src="./assets/leather_weekender.jpg" alt="Leather weekender" />
+      <div class="txt"><h3>Leather Weekender</h3><p>Carry-on elegance for weekend trips and shoots.</p></div>
+    </article>
+    <article class="gift" data-order="35" data-category="Accessories" data-priority="Low" data-when="Later">
+      <img src="./assets/scriveiner_pen.jpg" alt="Scriveiner pen" />
+      <div class="txt"><h3>Scriveiner Classic — Fountain Pen</h3><p>Ink that slows time. Signatures feel important.</p></div>
+    </article>
+
+    <!-- 37 -->
+    <article class="gift" data-order="37" data-category="Fragrance" data-priority="Mid" data-when="Later">
+      <img src="./assets/1million_elixir.jpg" alt="1 Million Elixir" />
+      <div class="txt">
+        <h3>Fragrance Roster — Highlights</h3>
+        <p>1 Million Elixir • Versace Eros • Afnan Supremacy (and others).</p>
+      </div>
+    </article>
+
+    <!-- 38 -->
+    <article class="gift" data-order="38" data-category="Tech" data-priority="Low" data-when="Later">
+      <img src="./assets/led_underglow.jpg" alt="LED underglow kit" />
+      <div class="txt"><h3>LED Underglow</h3><p>Night presence, tasteful color sweep.</p></div>
+    </article>
+
+    <!-- 39 -->
+    <article class="gift" data-order="39" data-category="Tech" data-priority="Mid" data-when="Later">
+      <img src="./assets/dji_mavic.jpg" alt="DJI Mavic Pro" />
+      <div class="txt"><h3>DJI Mavic Pro — Fly More</h3><p>4K eyes in the sky. Content and memories from above.</p></div>
+    </article>
+
+    <!-- 40 -->
+    <article class="gift" data-order="40" data-category="Home" data-priority="High" data-when="Now">
+      <img src="./assets/embody_gaming.jpg" alt="Embody Gaming chair" />
+      <div class="txt"><h3>Herman Miller Embody — Logitech G</h3><p>8-hour comfort for gaming, study, and deep work.</p></div>
+    </article>
+
+    <!-- 41–42 -->
+    <article class="gift" data-order="41" data-category="Style" data-priority="Low" data-when="Later">
+      <img src="./assets/polo_sweaters.jpg" alt="Polo sweater looks" />
+      <div class="txt"><h3>Polo Sweaters — Looks</h3><p>Warm layers that still read refined.</p></div>
+    </article>
+    <article class="gift" data-order="42" data-category="Style" data-priority="Low" data-when="Later">
+      <img src="./assets/bonobos_primo.jpg" alt="Bonobos Primo chino" />
+      <div class="txt"><h3>Bonobos Primo Chino</h3><p>Streamlined fit. Works with sneakers or loafers.</p></div>
+    </article>
+    <article class="gift" data-order="42.1" data-category="Style" data-priority="Low" data-when="Later">
+      <img src="./assets/jcrew_jetsetter.jpg" alt="J.Crew Jetsetter trouser" />
+      <div class="txt"><h3>J.Crew Jetsetter Trouser</h3><p>Tailored comfort for flights and dinners.</p></div>
+    </article>
+
+    <!-- 43 -->
+    <article class="gift" data-order="43" data-category="Accessories" data-priority="Low" data-when="Now">
+      <img src="./assets/fingears.jpg" alt="Fingears magnetic rings" />
+      <div class="txt"><h3>Fingears — Magnetic Rings</h3><p>Fidget that looks cool on camera.</p></div>
+    </article>
+
+    <!-- 44 -->
+    <article class="gift" data-order="44" data-category="Accessories" data-priority="Low" data-when="Later">
+      <img src="./assets/pocket_watch.jpg" alt="Pocket watch" />
+      <div class="txt"><h3>Pocket Watch</h3><p>Character piece. Old-world charm.</p></div>
+    </article>
+    <article class="gift" data-order="44.1" data-category="Accessories" data-priority="Low" data-when="Later">
+      <img src="./assets/collar_chain.jpg" alt="Collar chain" />
+      <div class="txt"><h3>Collar Chain — Variant</h3><p>Alternate style for different blazers.</p></div>
+    </article>
+
+    <!-- 45 -->
+    <article class="gift" data-order="45" data-category="Tech" data-priority="Low" data-when="Later">
+      <img src="./assets/autotune_prox.jpg" alt="Auto-Tune Pro X" />
+      <div class="txt"><h3>Auto-Tune Pro X</h3><p>Vocal polish for creative sessions.</p></div>
+    </article>
+    <article class="gift" data-order="45.1" data-category="Tech" data-priority="Low" data-when="Later">
+      <img src="./assets/fl_studio.jpg" alt="FL Studio All Plugins" />
+      <div class="txt"><h3>FL Studio — All Plugins</h3><p>Full DAW toolkit for music production.</p></div>
+    </article>
+
+    <!-- 46 -->
+    <article class="gift" data-order="46" data-category="Tech" data-priority="Low" data-when="Later">
+      <img src="./assets/gemini_pa.jpg" alt="Gemini PA speaker" />
+      <div class="txt"><h3>Gemini PA Speaker</h3><p>Portable power for parties and events.</p></div>
+    </article>
+
+    <!-- 47 -->
+    <article class="gift" data-order="47" data-category="Wellness" data-priority="Mid" data-when="Now">
+      <img src="./assets/bonsai.jpg" alt="Bonsai tree" />
+      <div class="txt"><h3>Bonsai</h3><p>Daily calm and discipline.</p></div>
+    </article>
+    <article class="gift" data-order="47.1" data-category="Wellness" data-priority="Mid" data-when="Now">
+      <img src="./assets/heat_pad.jpg" alt="Heat massaging weighted pad" />
+      <div class="txt"><h3>Heat Massaging Weighted Pad</h3><p>Recovery for back and shoulders after long sessions.</p></div>
+    </article>
+  </main>
+
+  <!-- =========================================================
+       FOOTER ACTIONS
+  ========================================================== -->
+  <footer class="foot" role="contentinfo">
+    <button class="btn" id="copyLink" type="button">Copy Shareable Link</button>
+    <button class="btn ghost" id="printPdf" type="button">Download PDF</button>
+  </footer>
+
+  <!-- =========================================================
+       INLINE SCRIPTS (filters + utilities)
+  ========================================================== -->
+  <script>
+    (function(){
+      const list = document.getElementById('list');
+      const cards = [...list.querySelectorAll('.gift')];
+      const fCategory = document.getElementById('fCategory');
+      const fPriority = document.getElementById('fPriority');
+      const fTiming = document.getElementById('fTiming');
+      const clearBtn = document.getElementById('clearFilters');
+
+      function applyFilters(){
+        const c = fCategory.value;
+        const p = fPriority.value;
+        const t = fTiming.value;
+        cards.forEach(card=>{
+          const okC = !c || card.dataset.category === c;
+          const okP = !p || card.dataset.priority === p;
+          const okT = !t || card.dataset.when === t;
+          card.style.display = (okC && okP && okT) ? 'grid' : 'none';
+        });
+        // maintain visual order (they already are in order; hidden ones collapse)
+      }
+
+      [fCategory,fPriority,fTiming].forEach(sel => sel.addEventListener('change', applyFilters));
+      clearBtn.addEventListener('click', ()=>{
+        fCategory.value = ""; fPriority.value = ""; fTiming.value = "";
+        applyFilters();
+      });
+
+      // Copy link
+      document.getElementById('copyLink').addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(location.href);
+          alert('Link copied!');
+        }catch(e){ alert('Copy failed. You can manually copy the URL.'); }
+      });
+
+      // Print to PDF
+      document.getElementById('printPdf').addEventListener('click', ()=> window.print());
+
+      // Keyboard A11y: press "f" to focus category filter
+      document.addEventListener('keydown', (e)=>{
+        if(e.key.toLowerCase()==='f'){ e.preventDefault(); fCategory.focus(); }
+      });
+    })();
+  </script>
+
+  <noscript>
+    <style>.gift{page-break-inside:avoid}</style>
+    <p style="max-width:840px;margin:2rem auto;padding:1rem;background:#fff;border:1px solid #e5e1f2;border-radius:12px">
+      JavaScript is disabled. Filters and actions are unavailable, but the list remains in the correct order.
+    </p>
+  </noscript>
+</body>
+</html>
