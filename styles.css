@@ -1,0 +1,310 @@
+/* ============================================================
+   BLAKE — CHRISTMAS 2024–2025  •  styles.css
+   Luxury aesthetic • performance-first • accessible
+   ============================================================ */
+
+/* ---------- Color System (old-money + modern) ---------- */
+:root{
+  --ink:#191326;             /* body text on bone */
+  --ink-2:#2a2040;           /* deeper text on white surfaces */
+  --bone:#F6F3EE;            /* paper background */
+  --paper:#ffffff;           /* cards */
+  --line:#E5E1F2;            /* soft line */
+  --gold:#C9B37E;            /* accents */
+  --gold-2:#E2D6B5;          /* subtle highlight */
+  --purple:#330072;          /* brand base */
+  --purple-500:#4B1796;      /* brand mid */
+  --purple-300:#7D55C7;      /* tints */
+  --mint:#B7D2C6;            /* lens refraction hint */
+  --success:#2ab37a;
+  --focus:#D8CCFF;
+  --shadow-strong:0 22px 70px rgba(41,0,95,.18),0 6px 22px rgba(20,0,50,.12);
+  --shadow-soft:0 12px 40px rgba(51,0,114,.14),0 2px 8px rgba(0,0,0,.08);
+  --radius:18px;
+  --radius-sm:12px;
+  --radius-lg:22px;
+  --maxw:1200px;
+}
+
+/* ---------- Reset / Base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;padding:0;background:var(--bone);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.4}
+img{max-width:100%;display:block}
+a{color:var(--purple-500);text-decoration:none}
+a:hover{text-decoration:underline}
+h1,h2,h3{font-family:"Playfair Display",serif;color:var(--ink-2);line-height:1.12;margin:.2em 0}
+h1{font-weight:700;font-size:clamp(36px,5.2vw,64px)}
+h2{font-weight:700;font-size:clamp(28px,3.6vw,42px)}
+h3{font-weight:600;font-size:clamp(20px,2vw,26px)}
+p{margin:.6em 0 1em}
+
+/* ---------- Navigation ---------- */
+.nav{
+  position:sticky;top:0;z-index:999;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 20px;background:rgba(246,243,238,.78);
+  -webkit-backdrop-filter:saturate(140%) blur(10px);
+  backdrop-filter:saturate(140%) blur(10px);
+  border-bottom:1px solid var(--line)
+}
+.brand{font-weight:700;letter-spacing:.14em;color:var(--purple);font-size:.96rem}
+
+/* ---------- Buttons ---------- */
+.btn{
+  --bg:var(--purple);
+  display:inline-flex;align-items:center;gap:.5ch;
+  background:var(--bg);color:#fff;border:none;
+  padding:10px 16px;border-radius:var(--radius-sm);
+  box-shadow:var(--shadow-soft);font-weight:600;cursor:pointer
+}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{
+  background:transparent;color:var(--purple);border:1px solid var(--purple);
+  box-shadow:none
+}
+.btn.ghost:hover{background:rgba(75,23,150,.06)}
+.btn[disabled]{opacity:.6;pointer-events:none}
+
+/* ---------- Layout ---------- */
+main{overflow-x:hidden}
+section{min-height:100svh;display:grid;place-items:center;padding:4rem 1.25rem}
+.pin{position:relative}
+.theme{accent-color:var(--purple-500)}
+
+/* ---------- Hero ---------- */
+.hero{
+  background:
+    radial-gradient(1200px 600px at 50% -12%, #fff 0%, var(--bone) 60%, #ece8fd 100%);
+}
+.hero-copy{max-width:820px;text-align:center}
+.hero-copy p{color:#4a415f}
+.hero-line{
+  height:2px;width:1px;background:var(--gold);
+  margin:18px auto;border-radius:999px;
+  box-shadow:0 0 0 1px rgba(201,179,126,.25), 0 8px 24px rgba(201,179,126,.35)
+}
+
+/* ---------- Shared Scene Defaults ---------- */
+.scene img{
+  max-width:min(86vw,1100px);width:100%;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-strong);
+  background:#fff
+}
+.blurb{max-width:820px;text-align:center;font-size:clamp(16px,1.8vw,20px);color:#463a64}
+.cta{position:absolute;right:5%;bottom:8%;display:flex;gap:10px}
+.spec-chips{
+  position:absolute;bottom:10%;display:flex;gap:8px;list-style:none;padding:0;margin:0
+}
+.spec-chips li{
+  background:rgba(255,255,255,.86);padding:6px 10px;border-radius:999px;
+  border:1px solid var(--line);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  font-weight:600;color:#30274a
+}
+
+/* ---------- S63 ---------- */
+.s63-frames{position:relative;display:grid;place-items:center}
+.s63{position:absolute;inset:0;margin:auto;opacity:0}
+.rim{will-change:transform}
+
+/* ---------- Drivers (fiber zoom) ---------- */
+.s-drivers .suede-mask{pointer-events:none;border-radius:var(--radius)}
+
+/* ---------- Hoodie ---------- */
+.s-hoodie .cloth img{border-radius:var(--radius)}
+
+/* ---------- Watch ---------- */
+.s-watch .watch{position:relative}
+.s-watch .date-window{
+  position:absolute;right:18%;top:48%;
+  background:#fff;padding:8px 12px;border-radius:8px;border:1px solid var(--line);
+  box-shadow:var(--shadow-soft);font-weight:700
+}
+
+/* ---------- Linen color-weave ---------- */
+.s-linen .color-weave{display:flex;gap:14px;overflow:hidden;width:min(92vw,1100px)}
+.s-linen .color-weave img{flex:0 0 74%;border-radius:var(--radius)}
+
+/* ---------- Clubmaster ---------- */
+.s-clubmaster .glasses{position:relative}
+.s-clubmaster .frame{max-width:640px;margin:auto;will-change:transform}
+.s-clubmaster .lens-bg{
+  position:absolute;inset:20% 8% 18% 8%;border-radius:12px;
+  background:conic-gradient(from 0deg at 50% 50%, var(--mint), #7ba08f, var(--mint));
+  mix-blend-mode:multiply;filter:blur(10px) saturate(.85);opacity:.6
+}
+
+/* ---------- Herod ---------- */
+.s-herod .bottle{position:relative}
+.s-herod .bottle .vapor{position:absolute;inset:-5% -5% -15% -5%;filter:blur(8px);opacity:.65}
+
+/* ---------- Cream Blazer ---------- */
+.s-cream-blazer .blueprint{position:relative}
+.s-cream-blazer .stitch{position:absolute;inset:0}
+.s-cream-blazer .stitch path{
+  stroke:var(--gold);stroke-width:2;fill:none;stroke-dasharray:1300;stroke-dashoffset:1300
+}
+
+/* ---------- Golden Goose ---------- */
+.s-gg .gg-wrap{position:relative}
+.s-gg .gallery-pedestal{
+  position:absolute;inset:auto 0 8% 0;margin:auto;width:60%;height:14px;border-radius:999px;
+  background:linear-gradient(to right, rgba(0,0,0,.15),rgba(0,0,0,.08),rgba(0,0,0,.15))
+}
+
+/* ---------- Mannequin runway ---------- */
+.s-blazers .mannequins{
+  display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));
+  gap:14px;align-items:end;max-width:var(--maxw)
+}
+
+/* ---------- Group rows ---------- */
+.vneck-row,.zip-gallery,.chains-row{
+  display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:var(--maxw)
+}
+
+/* ---------- Ultima RS ---------- */
+.s-ultima .year-rail{
+  position:absolute;right:6%;top:12%;display:flex;flex-direction:column;gap:10px
+}
+.s-ultima .year-rail span{
+  background:#fff;border:1px solid var(--line);padding:4px 8px;border-radius:999px;
+  box-shadow:var(--shadow-soft);font-weight:600
+}
+.s-ultima .ultima-photo{border-radius:var(--radius)}
+
+/* ---------- Exotics ---------- */
+.s-exotics .speed-ribbon{
+  position:absolute;left:0;right:0;top:40%;height:6px;
+  background:linear-gradient(90deg,#6ac,#fff,#6ac);filter:blur(2px);opacity:.25
+}
+.s-exotics .fleet{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+
+/* ---------- Desk Trio ---------- */
+.s-desk img{width:min(26rem,28vw);border-radius:16px}
+
+/* ---------- Dubai ---------- */
+.s-dubai .heat-haze{
+  position:absolute;inset:0;
+  background:radial-gradient(1200px 500px at 50% 110%, rgba(255,180,120,.22), transparent 60%);
+  mix-blend-mode:overlay;opacity:.55;border-radius:var(--radius-lg)
+}
+
+/* ---------- Fragrances ---------- */
+.s-frags .frag-grid{
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:var(--maxw)
+}
+.s-frags .constellation{width:min(92vw,1100px);height:44vh;border-radius:var(--radius);box-shadow:var(--shadow-soft);background:linear-gradient(180deg,#fff,#f7f5ff)}
+
+/* ---------- Underglow ---------- */
+.s-underglow .road{
+  width:120vw;height:10px;border-radius:999px;margin:auto;
+  background:linear-gradient(90deg,#f0f,#0ff,#ff0,#f0f);
+  filter:blur(3px);opacity:.6
+}
+
+/* ---------- DJI HUD ---------- */
+.s-dji .hud{
+  position:absolute;bottom:8%;left:50%;transform:translateX(-50%);display:flex;gap:10px
+}
+.s-dji .hud span{
+  background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-weight:600;
+  box-shadow:var(--shadow-soft)
+}
+
+/* ---------- Gemini PA ---------- */
+.s-gemini .ring{will-change:transform}
+
+/* ---------- Closer ---------- */
+.closer{
+  padding:10vh 2rem;background:#fff;border-top:1px solid var(--line)
+}
+.thanks{max-width:820px;margin:0 auto;text-align:center}
+.actions{display:flex;gap:12px;justify-content:center;margin-top:14px}
+
+/* ---------- List Page ---------- */
+.list{max-width:1080px;margin:24px auto;padding:0 16px}
+.gift{
+  display:grid;grid-template-columns:minmax(140px,180px) 1fr;gap:16px;
+  padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow-soft);margin:12px 0
+}
+.gift .txt h3{margin:.1em 0 .25em}
+.gift .links{display:flex;gap:10px;flex-wrap:wrap}
+.gift img{width:100%;height:auto;border-radius:10px}
+.foot{display:flex;justify-content:center;gap:10px;padding:24px}
+
+/* ---------- Utilities ---------- */
+.hidden{display:none!important}
+.center{display:grid;place-items:center}
+.badge{display:inline-block;background:#fff;border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+
+/* ---------- Focus States ---------- */
+:focus-visible{
+  outline:3px solid var(--focus);outline-offset:2px;border-radius:10px
+}
+
+/* ---------- Reduced Motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .pin{position:static}
+  .scene img,.lens-bg,.hero-line{transition:none!important;animation:none!important}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1080px){
+  .mannequins{grid-template-columns:repeat(3,minmax(120px,1fr))}
+  .s-desk img{width:min(18rem,40vw)}
+}
+@media (max-width: 740px){
+  .nav{padding:12px 14px}
+  .cta{position:static;margin-top:14px}
+  .spec-chips{position:static;margin-top:10px;flex-wrap:wrap;justify-content:center}
+  .mannequins{grid-template-columns:repeat(2,minmax(120px,1fr))}
+  .gift{grid-template-columns:1fr}
+  .s-dji .hud{position:static;transform:none;margin-top:10px}
+}
+
+/* ---------- Subtle Decorative Animations (CSS-driven) ---------- */
+@keyframes shimmer {
+  0%{background-position:-200% 0}
+  100%{background-position:200% 0}
+}
+@keyframes floaty {
+  0%{transform:translateY(0)}
+  50%{transform:translateY(-3px)}
+  100%{transform:translateY(0)}
+}
+
+/* ---------- Print (for list export) ---------- */
+@media print{
+  @page{margin:12mm}
+  body{background:#fff}
+  .nav,.foot{display:none!important}
+  .gift{box-shadow:none;border-color:#ddd;page-break-inside:avoid}
+  .gift img{max-height:120mm;object-fit:contain}
+  a{text-decoration:none;color:#000}
+}
+
+/* ---------- Nice Details ---------- */
+.card{
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-soft);padding:18px
+}
+hr{border:none;height:1px;background:linear-gradient(90deg,transparent, var(--line), transparent);margin:24px 0}
+blockquote{
+  margin:16px 0;padding:14px 16px;border-left:3px solid var(--gold);
+  background:#fff;box-shadow:var(--shadow-soft);border-radius:10px
+}
+
+/* ---------- Tooltip (optional micro component) ---------- */
+.tooltip{position:relative}
+.tooltip:hover::after{
+  content:attr(data-tip);position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(100% + 8px);white-space:nowrap;background:#22183a;color:#fff;
+  padding:6px 10px;border-radius:8px;box-shadow:var(--shadow-soft);font-size:.85rem
+}
+
+/* ---------- Palette Preview (dev helper; not displayed) ---------- */
+.palette{display:none}
