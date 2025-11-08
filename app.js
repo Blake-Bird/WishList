@@ -9,7 +9,7 @@ gsap.registerPlugin(ScrollTrigger);
 /* -----------------------------
    GLOBALS
 --------------------------------*/
-const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isReduced = false;
 const PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 2); // cap for perf
 const SCROLL_EASE = 0.08;
 const sections = [...document.querySelectorAll('section.scene.pin')];
@@ -142,7 +142,7 @@ preload([
    HERO Intro
 --------------------------------*/
 (function hero(){
-  if(isReduced) return;
+  
   gsap.fromTo('.hero-line',{width:1},{width:240, duration:1.2, ease:'expo.out', delay:.25});
   gsap.from('.hero-copy h1',{y:30, opacity:0, duration:1.0, ease:'power3.out', delay:.18});
   gsap.from('.hero-copy p',{y:20, opacity:0, duration:1.0, ease:'power2.out', delay:.35});
@@ -264,7 +264,7 @@ preload([
   const date = $('.date-window', el);
   const img = $('img', el);
 
-  if(isReduced) return;
+  
 
   const tl = gsap.timeline();
   tl.from(img, {scale:1.05, filter:'brightness(.95) contrast(1.05)', duration:.6, ease:'power2.out'}, 0);
@@ -292,7 +292,7 @@ preload([
 /* 5) Portofino Linen — horizontal scrub weave + moiré shimmer */
 (function linenScene(){
   const el = $('.s-linen'); if(!el) return;
-  if(isReduced){ return; }
+  
   const imgs = $$('.color-weave img', el);
   const track = $('.color-weave', el);
   const tl = gsap.timeline({defaults:{ease:'none'}});
@@ -367,7 +367,7 @@ preload([
 /* 9) Golden Goose — street-to-gallery FLIP */
 (function goldenGooseScene(){
   const el = $('.s-gg'); if(!el) return;
-  if(isReduced) return;
+  
   const shoe = $('.gg-shoe', el), ped = $('.gallery-pedestal', el);
   const tl = gsap.timeline();
   tl.fromTo(shoe, {rotate:-8, y:20, filter:'saturate(1.15) contrast(1.1)'},
@@ -382,7 +382,7 @@ preload([
 (function joggersScene(){
   const el = $('.s-joggers'); if(!el) return;
   const img = $('img', el);
-  if(isReduced) return;
+  
   const tl = gsap.timeline();
   tl.fromTo(img, {x:-1200, filter:'blur(8px)'}, {x:0, filter:'blur(0px)', duration:.8, ease:'expo.out'})
     .to(img, {y:10, duration:1.1, ease:'elastic.out(1,0.6)'}, .6);
@@ -393,7 +393,7 @@ preload([
 /* 11–12) Zip Cardigans — zipper pull + macro knit zoom */
 (function cardiganScene(){
   const el = $('.s-cardigans'); if(!el) return;
-  if(isReduced) return;
+  
   const imgs = $$('.zip-gallery img', el);
   const tl = gsap.timeline();
   tl.from(imgs, {y:30, opacity:0, stagger:.12, duration:.45, ease:'power2.out'})
@@ -404,7 +404,7 @@ preload([
 /* 13–15) Blazers — runway wall parallaxes + unique spins */
 (function blazersScene(){
   const el = $('.s-blazers'); if(!el) return;
-  if(isReduced) return;
+  
   const mans = $$('.mannequins img', el);
   const tl = gsap.timeline();
   mans.forEach((m,i)=>{
@@ -417,7 +417,7 @@ preload([
 /* 16–18) V-necks & Polo — collar flip micro-loop */
 (function vnecksScene(){
   const el = $('.s-vnecks'); if(!el) return;
-  if(isReduced) return;
+  
   const imgs = $$('.vneck-row img', el);
   const tl = gsap.timeline();
   tl.from(imgs, {opacity:0, y:30, stagger:.1, duration:.4, ease:'power2.out'})
@@ -429,7 +429,7 @@ preload([
 (function velvetScene(){
   const el = $('.s-velvet'); if(!el) return;
   const img = $('img', el);
-  if(isReduced) return;
+  
   const sheen = document.createElement('div');
   sheen.style.cssText='position:absolute;inset:0;border-radius:18px;mix-blend-mode:soft-light;background:linear-gradient(120deg, rgba(255,255,255,.18), transparent 40%, rgba(0,0,0,.18)); opacity:0';
   el.appendChild(sheen);
@@ -444,7 +444,7 @@ preload([
 /* 20–22) Chains — sparkle choreography */
 (function chainsScene(){
   const el = $('.s-chains'); if(!el) return;
-  if(isReduced) return;
+  
   const imgs = $$('.chains-row img', el);
   const tl = gsap.timeline();
   tl.from(imgs, {opacity:0, y:26, stagger:.08, duration:.4, ease:'power2.out'});
@@ -463,7 +463,7 @@ preload([
 (function suitsScene(){
   const el = $('.s-suits'); if(!el) return;
   const img = $('img', el);
-  if(isReduced) return;
+ 
   const tl = gsap.timeline();
   tl.from(img, {clipPath:'inset(50% 50% 50% 50%)', duration:1.2, ease:'expo.out'})
     .to(img, {scale:1.02, duration:1.0, ease:'sine.inOut'});
@@ -473,7 +473,7 @@ preload([
 /* 24) Purple Velvet — lapel peak sweep */
 (function purpleScene(){
   const el = $('.s-purple'); if(!el) return;
-  if(isReduced) return;
+  
   const img = $('img', el);
   const line = document.createElement('div');
   line.style.cssText='position:absolute;height:2px;width:24px;background:#C9B37E;left:40%;top:40%;opacity:0;border-radius:999px';
@@ -488,7 +488,7 @@ preload([
 /* 25–26) Chinos + Scarf — colorway lane + scarf drape morphs */
 (function chinosScene(){
   const el = $('.s-chinos'); if(!el) return;
-  if(isReduced) return;
+  
   const imgs = $$('img', el);
   const tl = gsap.timeline();
   tl.from(imgs[0], {x:-80, opacity:0, duration:.5, ease:'power2.out'})
@@ -500,7 +500,7 @@ preload([
 (function gamesScene(){
   const el = $('.s-games'); if(!el) return;
   const covers = $$('.covers img', el);
-  if(isReduced) return;
+ 
   const tl = gsap.timeline();
   tl.from(covers, {y:40, opacity:0, stagger:.08, duration:.35, ease:'power2.out'})
     .to(covers, {y:-4, yoyo:true, repeat:1, duration:1.0, ease:'sine.inOut'}, .5);
@@ -518,7 +518,7 @@ preload([
   const photo = $('.ultima-photo', el);
   const rail = $$('.year-rail span', el);
   const cvs = $('.ultima-blueprint', el);
-  if(isReduced){ return; }
+  
 
   // blueprint drawing
   const ctx = cvs.getContext('2d');
@@ -561,7 +561,7 @@ preload([
 /* 29) Exotics — speed ribbon + fleet slot-in + lap ticks */
 (function exoticsScene(){
   const el = $('.s-exotics'); if(!el) return;
-  if(isReduced) return;
+  
   const ribbon = $('.speed-ribbon', el);
   const cars = $$('.fleet img', el);
   const tl = gsap.timeline();
@@ -575,7 +575,7 @@ preload([
 /* 30) Desk Trio — orbital assembly + count-up */
 (function deskScene(){
   const el = $('.s-desk'); if(!el) return;
-  if(isReduced) return;
+  
   const items = $$('img', el);
   const tl = gsap.timeline({defaults:{ease:'power2.out'}});
   items.forEach((it,i)=> tl.from(it, {opacity:0, scale:.6, x:(i-1)*180, y:(i%2?-60:60), duration:.6}, i*0.08));
@@ -586,7 +586,7 @@ preload([
 /* 31) Dubai — heat haze + neon flicker + pool shimmer */
 (function dubaiScene(){
   const el = $('.s-dubai'); if(!el) return;
-  if(isReduced) return;
+  
   const haze = $('.heat-haze', el);
   const tl = gsap.timeline();
   tl.from($('.s-dubai img', el), {opacity:0, y:20, duration:.6, ease:'power2.out'})
@@ -598,7 +598,7 @@ preload([
 /* 32–35) Sweaters/Bag/Pen — knit displacement + zip + nib shimmer */
 (function sbpScene(){
   const el = $('.s-sweatersbagpen'); if(!el) return;
-  if(isReduced) return;
+ 
   const imgs = $$('img', el);
   const tl = gsap.timeline();
   tl.from(imgs, {opacity:0, y:30, stagger:.09, duration:.4, ease:'power2.out'})
@@ -633,7 +633,7 @@ preload([
 /* 38) LED Underglow — road sweep color scrub */
 (function underglowScene(){
   const el = $('.s-underglow'); if(!el) return;
-  if(isReduced) return;
+  
   const road = $('.road', el);
   const tl = gsap.timeline();
   tl.fromTo(road,{xPercent:-50, opacity:0},{xPercent:50, opacity:1, duration:1.2, ease:'sine.inOut'})
@@ -644,7 +644,7 @@ preload([
 /* 39) DJI — HUD counters + lock-on */
 (function djiScene(){
   const el = $('.s-dji'); if(!el) return;
-  if(isReduced) return;
+ 
   const hud = $$('.hud span', el);
   const tl = gsap.timeline();
   tl.from(hud, {y:20, opacity:0, stagger:.12, duration:.35, ease:'power2.out'})
@@ -655,7 +655,7 @@ preload([
 /* 40) Embody — posture morph upright→recline */
 (function embodyScene(){
   const el = $('.s-embody'); if(!el) return;
-  if(isReduced) return;
+  
   const img = $('img', el);
   const tl = gsap.timeline();
   tl.from(img, {scale:1.02, opacity:0.85, duration:.5, ease:'power2.out'})
@@ -667,7 +667,7 @@ preload([
 /* 41–42) Polo + Trousers — lookbook flip */
 (function poloScene(){
   const el = $('.s-polo-trousers'); if(!el) return;
-  if(isReduced) return;
+  
   const imgs = $$('img', el);
   const tl = gsap.timeline();
   tl.from(imgs, {opacity:0, rotateY:-15, transformOrigin:'0% 50%', stagger:.1, duration:.45, ease:'power2.out'})
@@ -678,7 +678,7 @@ preload([
 /* 43) Fingears — magnetic orbit physics */
 (function fingearsScene(){
   const el = $('.s-fingears'); if(!el) return;
-  if(isReduced) return;
+  
   const img = $('img', el);
   const tl = gsap.timeline();
   tl.from(img, {y:30, opacity:0, duration:.45, ease:'power2.out'})
@@ -690,7 +690,7 @@ preload([
 /* 44) Pocket watch / chain — inertia sway + sparkle path */
 (function pwatchScene(){
   const el = $('.s-pwatch'); if(!el) return;
-  if(isReduced) return;
+  
   const imgs = $$('img', el);
   const tl = gsap.timeline();
   tl.from(imgs, {y:40, opacity:0, stagger:.12, duration:.45, ease:'power2.out'})
@@ -701,7 +701,7 @@ preload([
 /* 45) Auto-Tune / FL — waveform rhythm */
 (function audioSoftScene(){
   const el = $('.s-audio-soft'); if(!el) return;
-  if(isReduced) return;
+ 
   const imgs = $$('img', el);
   const tl = gsap.timeline();
   tl.from(imgs, {opacity:0, y:30, stagger:.1, duration:.4, ease:'power2.out'})
@@ -712,7 +712,7 @@ preload([
 /* 46) Gemini PA — SPL pulse rings */
 (function geminiScene(){
   const el = $('.s-gemini'); if(!el) return;
-  if(isReduced) return;
+  
   const img = $('img', el);
   const ring = document.createElement('div');
   ring.style.cssText='position:absolute; inset:auto 0 14% 0; margin:auto; width:18vw; height:18vw; max-width:220px; max-height:220px; border:2px solid rgba(40,10,80,.25); border-radius:50%; opacity:0;';
@@ -728,7 +728,7 @@ preload([
 /* 47) Bonsai + Heat Pad — sway + thermal rise */
 (function bonsaiScene(){
   const el = $('.s-bonsai'); if(!el) return;
-  if(isReduced) return;
+  
   const imgs = $$('img', el);
   const tl = gsap.timeline();
   tl.from(imgs[0], {rotation:-1.2, transformOrigin:'50% 100%', duration:1.2, ease:'sine.inOut'})
@@ -741,7 +741,7 @@ preload([
    INTERACTION LUXE TOUCHES
 --------------------------------*/
 (function cursorMagnets(){
-  if(isReduced) return;
+  
   const mags = $$('.btn, .links a, .cta .btn');
   mags.forEach(m=>{
     m.addEventListener('mouseenter', ()=> gsap.to(m, {y:-1, scale:1.02, duration:.2, ease:'power2.out'}));
@@ -749,14 +749,7 @@ preload([
   });
 })();
 
-/* -----------------------------
-   ACCESSIBILITY: Reduced Motion
---------------------------------*/
-if(isReduced){
-  document.body.classList.add('reduced-motion');
-  // Ensure all pin sections act like static reveals (no ScrollTrigger pins)
-  sections.forEach(s => s.classList.remove('pin'));
-}
+
 
 /* -----------------------------
    LITTLE POLISH
