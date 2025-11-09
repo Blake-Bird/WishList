@@ -28,7 +28,6 @@
 
 /* ---------- Reset / Base ---------- */
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth}
 html,body{margin:0;padding:0;background:var(--bone);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.4}
 img{max-width:100%;display:block}
 a{color:var(--purple-500);text-decoration:none}
@@ -38,6 +37,13 @@ h1{font-weight:700;font-size:clamp(36px,5.2vw,64px)}
 h2{font-weight:700;font-size:clamp(28px,3.6vw,42px)}
 h3{font-weight:600;font-size:clamp(20px,2vw,26px)}
 p{margin:.6em 0 1em}
+
+/* --- Lenis helpers (must NOT use native smooth) --- */
+html.lenis, html.lenis body { height: auto; }
+.lenis-smooth { scroll-behavior: auto !important; }
+.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+
+
 
 /* ---------- Navigation ---------- */
 .nav{
@@ -72,6 +78,12 @@ main{overflow-x:hidden}
 section{min-height:100svh;display:grid;place-items:center;padding:4rem 1.25rem}
 .pin{position:relative}
 .theme{accent-color:var(--purple-500)}
+
+/* Pin sections need clear room to scrub */
+.scene.pin { min-height: 120svh; position: relative; }
+.hero.pin  { min-height: 100svh; position: relative; }
+
+
 
 /* ---------- Hero ---------- */
 .hero{
