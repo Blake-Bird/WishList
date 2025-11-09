@@ -14,13 +14,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* -----------------------------
      CONFIG
   --------------------------------*/
-  const isReduced =
-    window.matchMedia &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
+  const isReduced = false; // force full experience
   const PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 2);
-  const SCROLL_SMOOTH = 0.14; // slightly stronger for liquid feel
-  const SCROLL_PIXELS_PER_SEC = 520; // scroll distance per 1s of reel
+  const SCROLL_SMOOTH = 0.14;
+  const SCROLL_PIXELS_PER_SEC = 520;
 
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
   const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
@@ -34,21 +31,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* -----------------------------
-     LENIS + SCROLLTRIGGER BRIDGE
+     LENIS (smooth scroll on window)
   --------------------------------*/
   let lenis;
-  const SCROLLER = document.documentElement; // <html>
 
   function initLenis() {
-    if (isReduced || typeof Lenis === 'undefined') {
-      // Native scroll, basic setup
+    if (typeof Lenis === 'undefined') {
+      console.warn('Lenis not found, using native scroll');
       ScrollTrigger.defaults({ scroller: window });
       return;
     }
 
     lenis = new Lenis({
       lerp: SCROLL_SMOOTH,
-      wheelMultiplier: 1,
+      wheelMultiplier: 1.05,
       normalizeWheel: true,
       smoothTouch: true
     });
@@ -57,37 +53,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       ScrollTrigger.update();
     });
 
-    ScrollTrigger.scrollerProxy(SCROLLER, {
-      scrollTop(value) {
-        if (arguments.length) {
-          lenis.scrollTo(value, { immediate: false });
-        }
-        return lenis.scroll || window.scrollY || window.pageYOffset || 0;
-      },
-      getBoundingClientRect() {
-        return {
-          top: 0,
-          left: 0,
-          width: window.innerWidth,
-          height: window.innerHeight
-        };
-      },
-      pinType: SCROLLER.style.transform ? 'transform' : 'fixed'
-    });
-
-    ScrollTrigger.defaults({ scroller: SCROLLER });
-
     function raf(time) {
       lenis.raf(time);
       requestAnimationFrame(raf);
     }
     requestAnimationFrame(raf);
+
+    ScrollTrigger.defaults({ scroller: window });
   }
 
   initLenis();
 
   /* -----------------------------
-     AUDIO ENGINE (lightweight cues)
+     AUDIO ENGINE
   --------------------------------*/
   const AudioEngine = (() => {
     let ctx, master;
@@ -100,7 +78,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       master.connect(ctx.destination);
     }
 
-    function tone({ freq = 440, dur = 0.18, type = 'sine', attack = 0.01, release = 0.18, gain = 0.18 }) {
+    function tone({
+      freq = 440,
+      dur = 0.18,
+      type = 'sine',
+      attack = 0.01,
+      release = 0.18,
+      gain = 0.18
+    }) {
       ensure();
       const now = ctx.currentTime;
       const osc = ctx.createOscillator();
@@ -109,7 +94,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       osc.frequency.value = freq;
       g.gain.setValueAtTime(0, now);
       g.gain.linearRampToValueAtTime(gain, now + attack);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + attack + dur + release);
+      g.gain.exponentialRampToValueAtTime(
+        0.0001,
+        now + attack + dur + release
+      );
       osc.connect(g).connect(master);
       osc.start(now);
       osc.stop(now + attack + dur + release + 0.05);
@@ -160,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   AudioEngine.unlockOnFirstGesture();
 
   /* -----------------------------
-     PRELOAD CRITICAL IMAGES
+     PRELOAD
   --------------------------------*/
   const preloadList = [
     "s63_3q.jpg","s63_interior.jpg","s63_topdown.jpg",
@@ -199,8 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* -----------------------------
-     GLOBAL BRIDGE LAYER
-     (subtle grain + gold line tying scenes)
+     BRIDGE LAYER (ties everything)
   --------------------------------*/
   function createBridgeLayer() {
     const layer = document.createElement('div');
@@ -236,8 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     layer.appendChild(line);
 
     function flash(progress) {
-      // light grain lift on transitions
-      layer.style.opacity = clamp(0.18 + progress * 0.12, 0, 0.32);
+      layer.style.opacity = String(clamp(0.12 + progress * 0.2, 0, 0.32));
     }
 
     function sweep() {
@@ -259,8 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const bridge = createBridgeLayer();
 
   /* -----------------------------
-     SCENE BUILDERS
-     each returns a small timeline segment
+     SCENE TIMELINES
   --------------------------------*/
 
   function heroScene() {
@@ -273,14 +258,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const tl = gsap.timeline();
     tl.fromTo(line, { width: 0 }, { width: 240, duration: 0.9, ease: 'power3.out' })
-      .from(h1, { y: 26, opacity: 0, duration: 0.7, ease: 'power2.out' }, 0.08)
-      .from(p, { y: 18, opacity: 0, duration: 0.7, ease: 'power2.out' }, 0.16);
-
-    // light bridge sweep to lead into S63
-    tl.call(() => {
-      bridge.sweep();
-      AudioEngine.chimeHi();
-    }, null, '>-0.1');
+      .from(h1, { y: 26, opacity: 0, duration: 0.7, ease: 'power2.out' }, 0.05)
+      .from(p, { y: 18, opacity: 0, duration: 0.7, ease: 'power2.out' }, 0.14)
+      .call(() => {
+        bridge.sweep();
+        AudioEngine.chimeHi();
+      }, null, '>-0.1');
 
     return tl;
   }
@@ -313,61 +296,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tl = gsap.timeline();
 
     if (frames.length >= 3) {
-      // A -> B -> C with continuous feel
       tl.set(frames, { opacity: 0, scale: 1, zIndex: 1 });
       tl.set(frames[0], { opacity: 1, zIndex: 3 });
 
-      tl.to(frames[0], { opacity: 0, scale: 0.98, duration: 0.45 }, 0.25)
-        .to(frames[1], { opacity: 1, duration: 0.45 }, 0.25)
-        .to(frames[1], { opacity: 0, y: -14, duration: 0.45 }, 0.8)
-        .to(frames[2], { opacity: 1, y: 0, duration: 0.6 }, 0.8);
+      tl.to(frames[0], { opacity: 0, scale: 0.98, duration: 0.45 }, 0.1)
+        .to(frames[1], { opacity: 1, duration: 0.45 }, 0.1)
+        .to(frames[1], { opacity: 0, y: -14, duration: 0.45 }, 0.7)
+        .to(frames[2], { opacity: 1, y: 0, duration: 0.6 }, 0.7);
     }
 
-    // rim beat overlapping transition
+    tl.from(chips, {
+      y: 18,
+      opacity: 0,
+      stagger: 0.06,
+      duration: 0.35,
+      ease: 'power2.out'
+    }, 0.3);
+
     tl.fromTo(
       rim,
       { scale: 0.22, rotation: -200, opacity: 0 },
       { scale: 1, rotation: 360, opacity: 1, duration: 0.5, ease: 'expo.out' },
-      0.32
+      0.25
     ).to(
       rim,
       { scale: 0.01, opacity: 0, duration: 0.4, ease: 'power2.in' },
-      1.0
+      0.95
     );
 
-    // chrome sweep bridging frames
     tl.to(sweep, { opacity: 1, duration: 0.2 }, 0.18)
-      .to(
-        sweep,
-        {
-          backgroundPosition: '220% 0',
-          duration: 0.95,
-          ease: 'power2.inOut'
-        },
-        0.18
-      )
+      .to(sweep, {
+        backgroundPosition: '220% 0',
+        duration: 0.95,
+        ease: 'power2.inOut'
+      }, 0.18)
       .to(sweep, { opacity: 0, duration: 0.25 }, 1.1);
 
-    // spec chips rise as payoff
-    if (chips.length) {
-      tl.from(
-        chips,
-        {
-          y: 18,
-          opacity: 0,
-          stagger: 0.06,
-          duration: 0.35,
-          ease: 'power2.out'
-        },
-        0.42
-      );
-    }
-
     tl.call(() => {
-      bridge.flash(0.8);
+      bridge.flash(0.9);
       AudioEngine.whoosh();
       AudioEngine.chimeHi();
-    }, null, 0.24);
+    }, null, 0.2);
 
     return tl;
   }
@@ -375,20 +344,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   function driversScene() {
     const el = $('section[data-scene="drivers"]');
     if (!el) return gsap.timeline();
-
     const img = $('img', el);
+    if (!img) return gsap.timeline();
+
     const tl = gsap.timeline();
-
-    if (!img) return tl;
-
-    // subtle suede “focus in”
     tl.fromTo(
       img,
       { scale: 1.06, filter: 'contrast(1.08) saturate(1.02) blur(1.5px)' },
       { scale: 1, filter: 'none', duration: 0.9, ease: 'power2.out' }
     );
 
-    // mouse ghost trail — refined & self-fading
     const trail = document.createElement('canvas');
     trail.width = trail.height = 1024;
     trail.style.cssText =
@@ -398,8 +363,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ctx = trail.getContext('2d');
 
     let last = 0;
-    let fadeTimer = 0;
-
     el.addEventListener('mousemove', (e) => {
       const r = trail.getBoundingClientRect();
       const x = ((e.clientX - r.left) / r.width) * trail.width;
@@ -408,21 +371,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (now - last < 18) return;
       last = now;
 
-      ctx.globalCompositeOperation = 'source-over';
       ctx.fillStyle = 'rgba(0,0,0,0.06)';
       ctx.beginPath();
       ctx.arc(x, y, 34, 0, Math.PI * 2);
       ctx.fill();
-
-      // gentle decay
-      cancelAnimationFrame(fadeTimer);
-      const fade = () => {
-        ctx.fillStyle = 'rgba(255,255,255,0.02)';
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillRect(0, 0, trail.width, trail.height);
-        fadeTimer = requestAnimationFrame(fade);
-      };
-      fadeTimer = requestAnimationFrame(fade);
     });
 
     tl.call(() => {
@@ -453,24 +405,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       { y: -40, rotate: -2, transformOrigin: '50% 0', filter: 'brightness(.9) contrast(1.06)' },
       { y: 0, rotate: 0, duration: 0.9, ease: 'power2.out', filter: 'none' }
     )
-      .to(
-        stitch,
-        {
-          opacity: 1,
-          duration: 0.25,
-          ease: 'power1.out'
-        },
-        0.18
-      )
-      .to(
-        stitch,
-        {
-          backgroundPosition: '220% 0',
-          duration: 0.9,
-          ease: 'power2.inOut'
-        },
-        0.2
-      )
+      .to(stitch, { opacity: 1, duration: 0.25, ease: 'power1.out' }, 0.18)
+      .to(stitch, {
+        backgroundPosition: '220% 0',
+        duration: 0.9,
+        ease: 'power2.inOut'
+      }, 0.2)
       .to(stitch, { opacity: 0, duration: 0.3 }, 1.05)
       .call(AudioEngine.chimeHi, null, 0.3);
 
@@ -515,14 +455,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return tl;
   }
 
-  // For brevity, the remaining scenes follow the same pattern:
-  // - No independent ScrollTriggers
-  // - Timelines appended consecutively to `reel`
-  // - Minimal eases (mostly power2 / none)
-  // - Any canvas loops gated within their segment using tl.call()
-
-  // I’ll wire a few more key ones; you can mirror style if you add more later.
-
   function linenScene() {
     const el = $('section[data-scene="linen"]');
     if (!el) return gsap.timeline();
@@ -559,28 +491,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       duration: 0.6,
       ease: 'power2.out'
     })
-      .from(
-        lens,
-        {
-          opacity: 0,
-          scale: 0.9,
-          duration: 0.6,
-          ease: 'power2.out'
-        },
-        0.1
-      )
-      .to(
-        lens,
-        {
-          backgroundPosition: '200% 0',
-          duration: 1.2,
-          ease: 'sine.inOut'
-        },
-        0.18
-      )
+      .from(lens, {
+        opacity: 0,
+        scale: 0.9,
+        duration: 0.6,
+        ease: 'power2.out'
+      }, 0.1)
+      .to(lens, {
+        backgroundPosition: '200% 0',
+        duration: 1.2,
+        ease: 'sine.inOut'
+      }, 0.18)
       .call(AudioEngine.chimeHi, null, 0.3);
 
-    // micro 3D tilt (not tied to scroll)
     frame.style.transformOrigin = '50% 50%';
     frame.addEventListener('mousemove', (e) => {
       const r = frame.getBoundingClientRect();
@@ -592,7 +515,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`;
     });
     frame.addEventListener('mouseleave', () => {
-      frame.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg)';
+      frame.style.transform =
+        'perspective(900px) rotateX(0deg) rotateY(0deg)';
     });
 
     return tl;
@@ -659,41 +583,811 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
       .call(() => { active = true; loop(); }, null, 0.1)
       .call(AudioEngine.chimeLo, null, 0.2)
-      .call(() => { active = false; }, null, '>=+1.4');
+      .call(() => { active = false; }, null, '+=1.4');
 
     return tl;
   }
 
-  // You’d continue this pattern for:
-  // creamBlazerScene, goldenGooseScene, joggersScene, cardigansScene,
-  // blazersScene, vnecksScene, velvetScene, chainsScene, suitsScene,
-  // purpleScene, chinosScene, gamesScene, ultimaScene,
-  // exoticsScene, deskScene, dubaiScene, sbpScene,
-  // fragsScene (with gated loop), underglowScene, djiScene,
-  // embodyScene, poloScene, fingearsScene, pwatchScene,
-  // audioSoftScene, geminiScene, bonsaiScene.
-  //
-  // Each:
-  // - builds ONE gsap.timeline()
-  // - NO ScrollTrigger in there
-  // - is appended to `reel` directly → continuous play
-  // - any fancy loops use tl.call(start/stop) so they only run in-range
+  function creamBlazerScene() {
+    const el = $('section[data-scene="creamBlazer"]');
+    if (!el) return gsap.timeline();
+    const path = $('svg.stitch path', el);
+    const img = $('.blueprint img', el);
+    if (!path || !img) return gsap.timeline();
+
+    const len = path.getTotalLength();
+    gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
+
+    const tl = gsap.timeline();
+    tl.to(path, { strokeDashoffset: 0, duration: 0.9, ease: 'power2.out' })
+      .from(img, {
+        scale: 0.96,
+        opacity: 0.8,
+        duration: 0.8,
+        ease: 'power2.out'
+      }, 0)
+      .call(AudioEngine.chimeHi, null, 0.6);
+
+    return tl;
+  }
+
+  function goldenGooseScene() {
+    const el = $('section[data-scene="gg"]');
+    if (!el) return gsap.timeline();
+    const shoe = $('.gg-shoe', el);
+    const ped = $('.gallery-pedestal', el);
+    if (!shoe || !ped) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.fromTo(
+      shoe,
+      { rotate: -8, y: 20, filter: 'saturate(1.15) contrast(1.1)' },
+      { rotate: 0, y: -6, duration: 0.7, ease: 'expo.out' }
+    )
+      .fromTo(
+        ped,
+        { scaleX: 0.2, opacity: 0 },
+        { scaleX: 1, opacity: 1, duration: 0.5, ease: 'power2.out' },
+        0.2
+      )
+      .to(shoe, { y: -2, duration: 0.6, ease: 'sine.inOut' })
+      .to(shoe, { y: 0, duration: 0.6, ease: 'sine.inOut' });
+
+    return tl;
+  }
+
+  function joggersScene() {
+    const el = $('section[data-scene="joggers"]');
+    if (!el) return gsap.timeline();
+    const img = $('img', el);
+    if (!img) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.fromTo(
+      img,
+      { x: -1200, filter: 'blur(8px)' },
+      { x: 0, filter: 'blur(0px)', duration: 0.8, ease: 'expo.out' }
+    ).to(img, {
+      y: 10,
+      duration: 1.1,
+      ease: 'elastic.out(1,0.6)'
+    }, 0.6)
+      .call(AudioEngine.whoosh, null, 0.1);
+
+    return tl;
+  }
+
+  function cardiganScene() {
+    const el = $('section[data-scene="cardigans"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('.zip-gallery img', el);
+    if (!imgs.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs, {
+      y: 30,
+      opacity: 0,
+      stagger: 0.12,
+      duration: 0.45,
+      ease: 'power2.out'
+    }).to(imgs, {
+      scale: 1.02,
+      duration: 1.0,
+      ease: 'sine.inOut'
+    });
+
+    return tl;
+  }
+
+  function blazersScene() {
+    const el = $('section[data-scene="blazers"]');
+    if (!el) return gsap.timeline();
+    const mans = $$('.mannequins img', el);
+    if (!mans.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    mans.forEach((m, i) => {
+      tl.from(m, {
+        y: 40,
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power2.out'
+      }, i * 0.1)
+        .to(m, {
+          rotationY: (i % 2 ? 1 : -1) * 18,
+          transformOrigin: '50% 50% -300px',
+          duration: 1.2,
+          ease: 'sine.inOut'
+        }, 0.4 + i * 0.05);
+    });
+
+    return tl;
+  }
+
+  function vnecksScene() {
+    const el = $('section[data-scene="vnecks"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('.vneck-row img', el);
+    if (!imgs.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs, {
+      opacity: 0,
+      y: 30,
+      stagger: 0.1,
+      duration: 0.4,
+      ease: 'power2.out'
+    }).to(imgs, {
+      y: -4,
+      yoyo: true,
+      repeat: 1,
+      duration: 1.0,
+      ease: 'sine.inOut'
+    }, 0.5);
+
+    return tl;
+  }
+
+  function velvetScene() {
+    const el = $('section[data-scene="velvet"]');
+    if (!el) return gsap.timeline();
+    const img = $('img', el);
+    if (!img) return gsap.timeline();
+
+    const sheen = document.createElement('div');
+    sheen.style.cssText =
+      'position:absolute;inset:0;border-radius:18px;mix-blend-mode:soft-light;' +
+      'background:linear-gradient(120deg, rgba(255,255,255,.18), transparent 40%, rgba(0,0,0,.18)); opacity:0';
+    el.appendChild(sheen);
+
+    const tl = gsap.timeline();
+    tl.from(img, {
+      scale: 1.02,
+      opacity: 0.8,
+      duration: 0.6,
+      ease: 'power2.out'
+    })
+      .to(sheen, {
+        opacity: 1,
+        backgroundPosition: '200% 0',
+        duration: 1.2,
+        ease: 'sine.inOut'
+      }, 0.1)
+      .to(sheen, { opacity: 0.4, duration: 0.5 }, 1.0);
+
+    return tl;
+  }
+
+  function chainsScene() {
+    const el = $('section[data-scene="chains"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('.chains-row img', el);
+    if (!imgs.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs, {
+      opacity: 0,
+      y: 26,
+      stagger: 0.08,
+      duration: 0.4,
+      ease: 'power2.out'
+    });
+
+    return tl;
+  }
+
+  function suitsScene() {
+    const el = $('section[data-scene="suits"]');
+    if (!el) return gsap.timeline();
+    const img = $('img', el);
+    if (!img) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(img, {
+      clipPath: 'inset(50% 50% 50% 50%)',
+      duration: 1.2,
+      ease: 'expo.out'
+    }).to(img, {
+      scale: 1.02,
+      duration: 1.0,
+      ease: 'sine.inOut'
+    });
+
+    return tl;
+  }
+
+  function purpleScene() {
+    const el = $('section[data-scene="purple"]');
+    if (!el) return gsap.timeline();
+    const img = $('img', el);
+    if (!img) return gsap.timeline();
+
+    const line = document.createElement('div');
+    line.style.cssText =
+      'position:absolute;height:2px;width:24px;background:#C9B37E;left:40%;top:40%;opacity:0;border-radius:999px';
+    el.appendChild(line);
+
+    const tl = gsap.timeline();
+    tl.from(img, {
+      opacity: 0,
+      y: 20,
+      duration: 0.5,
+      ease: 'power2.out'
+    })
+      .to(line, {
+        opacity: 1,
+        x: 120,
+        duration: 0.6,
+        ease: 'sine.inOut'
+      }, 0.2)
+      .to(line, {
+        opacity: 0,
+        duration: 0.2
+      }, 0.9);
+
+    return tl;
+  }
+
+  function chinosScene() {
+    const el = $('section[data-scene="chinos"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('img', el);
+    if (imgs.length < 2) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs[0], {
+      x: -80,
+      opacity: 0,
+      duration: 0.5,
+      ease: 'power2.out'
+    }).from(imgs[1], {
+      x: 80,
+      opacity: 0,
+      duration: 0.5,
+      ease: 'power2.out'
+    }, 0.1);
+
+    return tl;
+  }
+
+  function gamesScene() {
+    const el = $('section[data-scene="games"]');
+    if (!el) return gsap.timeline();
+    const covers = $$('.covers img', el);
+    if (!covers.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(covers, {
+      y: 40,
+      opacity: 0,
+      stagger: 0.08,
+      duration: 0.35,
+      ease: 'power2.out'
+    }).to(covers, {
+      y: -4,
+      yoyo: true,
+      repeat: 1,
+      duration: 1.0,
+      ease: 'sine.inOut'
+    }, 0.5)
+      .call(AudioEngine.chimeHi, null, 0.4);
+
+    return tl;
+  }
+
+  function ultimaScene() {
+    const el = $('section[data-scene="ultima"]');
+    if (!el) return gsap.timeline();
+    const photo = $('.ultima-photo', el);
+    const rail = $$('.year-rail span', el);
+    const cvs = $('.ultima-blueprint', el);
+    if (!photo || !rail.length || !cvs) return gsap.timeline();
+
+    const ctx = cvs.getContext('2d');
+    function resize() {
+      const r = el.getBoundingClientRect();
+      cvs.width = r.width * PIXEL_RATIO;
+      cvs.height = r.height * 0.6 * PIXEL_RATIO;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    let prog = 0;
+    let active = false;
+    function render() {
+      if (!active) return;
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+      ctx.strokeStyle = 'rgba(80,60,140,.9)';
+      ctx.lineWidth = 2 * PIXEL_RATIO;
+      ctx.setLineDash([12 * PIXEL_RATIO, 12 * PIXEL_RATIO]);
+      const w = cvs.width, h = cvs.height;
+      ctx.beginPath();
+      ctx.moveTo(w * .05, h * .65);
+      ctx.quadraticCurveTo(w * .35, h * .20, w * .75, h * .25);
+      ctx.quadraticCurveTo(w * .92, h * .28, w * .95, h * .62);
+      ctx.quadraticCurveTo(w * .70, h * .68, w * .40, h * .70);
+      ctx.quadraticCurveTo(w * .18, h * .70, w * .05, h * .65);
+      ctx.stroke();
+      const step = 28 * PIXEL_RATIO;
+      ctx.globalAlpha = .18;
+      for (let x = -h; x < w; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x + prog * 18, 0);
+        ctx.lineTo(x + h + prog * 18, h);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      prog += 0.0025;
+      requestAnimationFrame(render);
+    }
+
+    const tl = gsap.timeline();
+    tl.from(photo, {
+      opacity: 0,
+      scale: .96,
+      duration: .9,
+      ease: 'expo.out'
+    }, 0.2)
+      .from(rail, {
+        opacity: 0,
+        x: 20,
+        stagger: .15,
+        duration: .35,
+        ease: 'power2.out'
+      }, 0.1)
+      .call(() => {
+        active = true;
+        render();
+        AudioEngine.whoosh();
+        setTimeout(AudioEngine.chimeHi, 260);
+      }, null, 0.4)
+      .call(() => { active = false; }, null, '+=1.6');
+
+    return tl;
+  }
+
+  function exoticsScene() {
+    const el = $('section[data-scene="exotics"]');
+    if (!el) return gsap.timeline();
+    const ribbon = $('.speed-ribbon', el);
+    const cars = $$('.fleet img', el);
+    if (!ribbon || !cars.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.to(ribbon, {
+      xPercent: 100,
+      repeat: 1,
+      yoyo: true,
+      duration: 1.4,
+      ease: 'sine.inOut'
+    }, 0)
+      .from(cars, {
+        y: 60,
+        opacity: 0,
+        stagger: 0.12,
+        duration: 0.45,
+        ease: 'power2.out'
+      }, 0.2)
+      .call(AudioEngine.whoosh, null, 0.3);
+
+    return tl;
+  }
+
+  function deskScene() {
+    const el = $('section[data-scene="desk"]');
+    if (!el) return gsap.timeline();
+    const items = $$('img', el);
+    if (!items.length) return gsap.timeline();
+
+    const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+    items.forEach((it, i) => {
+      tl.from(it, {
+        opacity: 0,
+        scale: .6,
+        x: (i - 1) * 180,
+        y: (i % 2 ? -60 : 60),
+        duration: .6
+      }, i * 0.08);
+    });
+    tl.call(AudioEngine.chimeHi, null, 0.4);
+
+    return tl;
+  }
+
+  function dubaiScene() {
+    const el = $('section[data-scene="dubai"]');
+    if (!el) return gsap.timeline();
+    const haze = $('.heat-haze', el);
+    const img = $('img', el);
+    if (!img || !haze) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(img, {
+      opacity: 0,
+      y: 20,
+      duration: .6,
+      ease: 'power2.out'
+    })
+      .to(haze, {
+        opacity: .9,
+        duration: 1.2,
+        ease: 'sine.inOut'
+      }, 0.2)
+      .to(haze, {
+        opacity: .4,
+        duration: 1.0,
+        ease: 'sine.inOut'
+      });
+
+    return tl;
+  }
+
+  function sweatersBagPenScene() {
+    const el = $('section[data-scene="sweatersbagpen"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('img', el);
+    if (!imgs.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs, {
+      opacity: 0,
+      y: 30,
+      stagger: .09,
+      duration: .4,
+      ease: 'power2.out'
+    }).to(imgs, {
+      y: -3,
+      yoyo: true,
+      repeat: 1,
+      duration: 1.0,
+      ease: 'sine.inOut'
+    }, 0.6);
+
+    return tl;
+  }
+
+  function fragsScene() {
+    const el = $('section[data-scene="frags"]');
+    if (!el) return gsap.timeline();
+    const cvs = $('.constellation', el);
+    const ctx = cvs ? cvs.getContext('2d') : null;
+    const thumbs = $$('.frag-grid img', el);
+    if (!cvs || !ctx) return gsap.timeline();
+
+    function resize() {
+      const r = el.getBoundingClientRect();
+      cvs.width = r.width * PIXEL_RATIO;
+      cvs.height = (r.height * .7) * PIXEL_RATIO;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const dots = new Array(80).fill(0).map(() => ({
+      x: Math.random() * cvs.width,
+      y: Math.random() * cvs.height,
+      r: Math.random() * 2 + 1,
+      s: Math.random() * 0.6 + 0.4,
+      hue: Math.random() * 360
+    }));
+
+    let active = false;
+    function step() {
+      if (!active) return;
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+      for (const d of dots) {
+        d.x += (Math.random() - .5) * d.s;
+        d.y += (Math.random() - .5) * d.s;
+        d.x = clamp(d.x, 0, cvs.width);
+        d.y = clamp(d.y, 0, cvs.height);
+        ctx.fillStyle = `hsla(${d.hue},70%,60%,0.7)`;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      requestAnimationFrame(step);
+    }
+
+    const tl = gsap.timeline();
+    tl.from(thumbs, {
+      opacity: 0,
+      y: 20,
+      stagger: 0.08,
+      duration: 0.4,
+      ease: 'power2.out'
+    })
+      .call(() => {
+        active = true;
+        step();
+        AudioEngine.chimeLo();
+      }, null, 0.2)
+      .call(() => { active = false; }, null, '+=1.6');
+
+    return tl;
+  }
+
+  function underglowScene() {
+    const el = $('section[data-scene="underglow"]');
+    if (!el) return gsap.timeline();
+    const road = $('.road', el);
+    const img = $('img', el);
+    if (!road || !img) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.fromTo(road,
+      { xPercent: -50, opacity: 0 },
+      { xPercent: 50, opacity: 1, duration: 1.2, ease: 'sine.inOut' }
+    )
+      .from(img, {
+        opacity: 0,
+        y: 20,
+        duration: 0.5,
+        ease: 'power2.out'
+      }, 0.1);
+
+    return tl;
+  }
+
+  function djiScene() {
+    const el = $('section[data-scene="dji"]');
+    if (!el) return gsap.timeline();
+    const img = $('img', el);
+    const hud = $$('.hud span', el);
+    if (!img || !hud.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(img, {
+      opacity: 0,
+      y: 30,
+      duration: 0.6,
+      ease: 'power2.out'
+    })
+      .from(hud, {
+        y: 20,
+        opacity: 0,
+        stagger: .12,
+        duration: .35,
+        ease: 'power2.out'
+      }, 0.2);
+
+    return tl;
+  }
+
+  function embodyScene() {
+    const el = $('section[data-scene="embody"]');
+    if (!el) return gsap.timeline();
+    const img = $('img', el);
+    if (!img) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(img, {
+      scale: 1.02,
+      opacity: 0.85,
+      duration: .5,
+      ease: 'power2.out'
+    })
+      .to(img, {
+        transform: 'perspective(900px) rotateX(8deg) rotateY(-6deg)',
+        duration: .6,
+        ease: 'sine.inOut'
+      })
+      .to(img, {
+        transform: 'perspective(900px) rotateX(18deg) rotateY(0deg) translateY(6px)',
+        duration: .9,
+        ease: 'sine.inOut'
+      });
+
+    return tl;
+  }
+
+  function poloScene() {
+    const el = $('section[data-scene="poloTrousers"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('img', el);
+    if (!imgs.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs, {
+      opacity: 0,
+      rotateY: -15,
+      transformOrigin: '0% 50%',
+      stagger: .1,
+      duration: .45,
+      ease: 'power2.out'
+    }).to(imgs, {
+      rotateY: 0,
+      duration: .8,
+      ease: 'sine.inOut'
+    });
+
+    return tl;
+  }
+
+  function fingearsScene() {
+    const el = $('section[data-scene="fingears"]');
+    if (!el) return gsap.timeline();
+    const img = $('img', el);
+    if (!img) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(img, {
+      y: 30,
+      opacity: 0,
+      duration: .45,
+      ease: 'power2.out'
+    })
+      .to(img, {
+        rotation: 360,
+        repeat: 1,
+        yoyo: true,
+        duration: 1.2,
+        ease: 'sine.inOut'
+      }, 0.4)
+      .call(AudioEngine.chimeHi, null, 0.4);
+
+    return tl;
+  }
+
+  function pwatchScene() {
+    const el = $('section[data-scene="pwatch"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('img', el);
+    if (!imgs.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs, {
+      y: 40,
+      opacity: 0,
+      stagger: .12,
+      duration: .45,
+      ease: 'power2.out'
+    })
+      .to(imgs, {
+        rotation: (i) => (i % 2 ? -2 : 2),
+        yoyo: true,
+        repeat: 1,
+        transformOrigin: '50% 0%',
+        duration: 1.2,
+        ease: 'sine.inOut'
+      }, 0.5);
+
+    return tl;
+  }
+
+  function audioSoftScene() {
+    const el = $('section[data-scene="audioSoft"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('img', el);
+    if (!imgs.length) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs, {
+      opacity: 0,
+      y: 30,
+      stagger: .1,
+      duration: .4,
+      ease: 'power2.out'
+    })
+      .to(imgs, {
+        y: -3,
+        yoyo: true,
+        repeat: 2,
+        duration: .6,
+        ease: 'sine.inOut'
+      }, 0.6);
+
+    return tl;
+  }
+
+  function geminiScene() {
+    const el = $('section[data-scene="gemini"]');
+    if (!el) return gsap.timeline();
+    const img = $('img', el);
+    if (!img) return gsap.timeline();
+
+    const ring = document.createElement('div');
+    ring.style.cssText =
+      'position:absolute; inset:auto 0 14% 0; margin:auto; width:18vw; height:18vw; ' +
+      'max-width:220px; max-height:220px; border:2px solid rgba(40,10,80,.25); ' +
+      'border-radius:50%; opacity:0;';
+    el.appendChild(ring);
+
+    const tl = gsap.timeline();
+    tl.from(img, {
+      opacity: 0,
+      y: 20,
+      duration: .5,
+      ease: 'power2.out'
+    })
+      .to(ring, {
+        opacity: 1,
+        scale: 1.6,
+        borderColor: 'rgba(40,10,80,.05)',
+        duration: 1.2,
+        ease: 'sine.out'
+      }, 0.3)
+      .to(ring, {
+        opacity: 0,
+        duration: .4
+      }, 1.2)
+      .call(AudioEngine.whoosh, null, 0.4);
+
+    return tl;
+  }
+
+  function bonsaiScene() {
+    const el = $('section[data-scene="bonsai"]');
+    if (!el) return gsap.timeline();
+    const imgs = $$('img', el);
+    if (imgs.length < 2) return gsap.timeline();
+
+    const tl = gsap.timeline();
+    tl.from(imgs[0], {
+      rotation: -1.2,
+      transformOrigin: '50% 100%',
+      duration: 1.2,
+      ease: 'sine.inOut'
+    })
+      .from(imgs[1], {
+        opacity: 0,
+        y: 24,
+        duration: .5,
+        ease: 'power2.out'
+      }, 0.2)
+      .to(imgs[1], {
+        filter: 'brightness(1.1) saturate(1.05)',
+        duration: 1.1,
+        ease: 'sine.inOut'
+      }, 0.6);
+
+    return tl;
+  }
+
+  function closerScene() {
+    const el = document.querySelector('section.closer');
+    if (!el) return gsap.timeline();
+    const h = el.querySelector('h2');
+    const btns = el.querySelectorAll('.actions .btn');
+
+    const tl = gsap.timeline();
+    tl.from(el, {
+      opacity: 0,
+      duration: 0.6,
+      ease: 'power2.out'
+    })
+      .from(h, {
+        y: 18,
+        opacity: 0,
+        duration: 0.6,
+        ease: 'power2.out'
+      }, 0.1)
+      .from(btns, {
+        y: 12,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.4,
+        ease: 'power2.out'
+      }, 0.3);
+
+    return tl;
+  }
 
   /* -----------------------------
-     MASTER REEL
+     MASTER REEL (one continuous motion)
   --------------------------------*/
   const reel = gsap.timeline({
     paused: true,
-    defaults: { ease: 'none' }
+    defaults: { ease: 'power2.out' }
   });
 
   function addScene(label, tl) {
-    if (!tl || !tl.duration || tl.duration() === 0) return;
+    if (!tl || typeof tl.totalDuration !== 'function') return;
+    const d = tl.totalDuration();
+    if (!d || d <= 0) return;
     reel.addLabel(label, reel.duration());
     reel.add(tl, '>');
   }
 
-  // Build sequence in exact narrative order
+  // order must mirror your HTML sequence
   addScene('hero', heroScene());
   addScene('s63', s63Scene());
   addScene('drivers', driversScene());
@@ -702,7 +1396,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   addScene('linen', linenScene());
   addScene('clubmaster', clubmasterScene());
   addScene('herod', herodScene());
-  // ...continue addScene() calls for all other scenes in your order
+  addScene('creamBlazer', creamBlazerScene());
+  addScene('gg', goldenGooseScene());
+  addScene('joggers', joggersScene());
+  addScene('cardigans', cardiganScene());
+  addScene('blazers', blazersScene());
+  addScene('vnecks', vnecksScene());
+  addScene('velvet', velvetScene());
+  addScene('chains', chainsScene());
+  addScene('suits', suitsScene());
+  addScene('purple', purpleScene());
+  addScene('chinos', chinosScene());
+  addScene('games', gamesScene());
+  addScene('ultima', ultimaScene());
+  addScene('exotics', exoticsScene());
+  addScene('desk', deskScene());
+  addScene('dubai', dubaiScene());
+  addScene('sweatersbagpen', sweatersBagPenScene());
+  addScene('frags', fragsScene());
+  addScene('underglow', underglowScene());
+  addScene('dji', djiScene());
+  addScene('embody', embodyScene());
+  addScene('poloTrousers', poloScene());
+  addScene('fingears', fingearsScene());
+  addScene('pwatch', pwatchScene());
+  addScene('audioSoft', audioSoftScene());
+  addScene('gemini', geminiScene());
+  addScene('bonsai', bonsaiScene());
+  addScene('closer', closerScene());
 
   /* -----------------------------
      START AFTER ASSETS READY
@@ -711,24 +1432,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await Promise.race([
         preloadImages(preloadList),
-        new Promise(res => setTimeout(res, 1600)) // fallback so it still starts
+        new Promise(res => setTimeout(res, 1600))
       ]);
     } catch (e) {
-      console.warn('Image preload had issues, continuing anyway.', e);
+      console.warn('Image preload issue, continuing.', e);
     }
 
     if (document.fonts && document.fonts.ready) {
       try { await document.fonts.ready; } catch(e) {}
     }
 
-    // Map scroll to reel; pin main so the whole thing is one stage
-    const total = reel.duration() || 10;
+    const total = reel.totalDuration() || 10;
+
     ScrollTrigger.create({
       animation: reel,
       trigger: main,
       start: 'top top',
       end: () => '+=' + total * SCROLL_PIXELS_PER_SEC,
-      scrub: 0.6,
+      scrub: 0.8,
       pin: true,
       anticipatePin: 1,
       snap: {
@@ -737,7 +1458,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         ease: 'power1.inOut'
       },
       onUpdate: (self) => {
-        // use bridge layer as glue throughout
         const p = self.progress;
         const mod = Math.sin(p * Math.PI);
         bridge.flash(mod);
@@ -752,7 +1472,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* -----------------------------
      MICRO INTERACTIONS
   --------------------------------*/
-  function cursorMagnets() {
+  (function cursorMagnets() {
     const mags = $$('.btn, .links a, .cta .btn');
     mags.forEach((m) => {
       m.addEventListener('mouseenter', () => {
@@ -772,6 +1492,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
       });
     });
-  }
-  cursorMagnets();
+  })();
 });
