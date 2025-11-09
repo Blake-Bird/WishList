@@ -7,22 +7,61 @@
 gsap.registerPlugin(ScrollTrigger);
 
 /* -----------------------------
-   GLOBALS
+   GLOBALS  (define BEFORE Lenis init!)
 --------------------------------*/
 const isReduced = false;
-const PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 2); // cap for perf
-const SCROLL_EASE = 0.08;
+const SCROLL_EASE = 0.08;  // <-- must exist before we pass it to Lenis
+const PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 2);
 const sections = [...document.querySelectorAll('section.scene.pin')];
 const hasWebGL = (() => {
-  try { const c = document.createElement('canvas'); return !!window.WebGLRenderingContext && !!(c.getContext('webgl') || c.getContext('experimental-webgl')); } catch(e){ return false; }
+  try {
+    const c = document.createElement('canvas');
+    return !!window.WebGLRenderingContext && !!(c.getContext('webgl') || c.getContext('experimental-webgl'));
+  } catch(e){ return false; }
 })();
 
-/* -----------------------------
-   SMOOTH SCROLL (Lenis)
---------------------------------*/
-const lenis = new Lenis({ lerp: SCROLL_EASE, wheelMultiplier: 1.05, normalizeWheel: true, smoothTouch: true });
-function raf(t){ lenis.raf(t); ScrollTrigger.update(); requestAnimationFrame(raf); }
+/* ---- Lenis + ScrollTrigger bridge ---- */
+const SCROLLER = document.documentElement;
+const lenis = new Lenis({
+  lerp: SCROLL_EASE,
+  wheelMultiplier: 1.05,
+  normalizeWheel: true,
+  smoothTouch: true
+});
+
+// Lenis drives ScrollTrigger
+lenis.on('scroll', ScrollTrigger.update);
+
+// Proxy the virtual scroll to ScrollTrigger
+ScrollTrigger.scrollerProxy(SCROLLER, {
+  scrollTop(value){
+    if (arguments.length) {
+      lenis.scrollTo(value, { immediate: true });
+    }
+    return lenis.scroll;
+  },
+  getBoundingClientRect(){
+    return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+  },
+  // If you see pin jitter, switch to 'transform'
+  pinType: SCROLLER.style.transform ? 'transform' : 'fixed'
+});
+
+// RAF loop for Lenis
+function raf(t){ lenis.raf(t); requestAnimationFrame(raf); }
 requestAnimationFrame(raf);
+
+// Tell ScrollTrigger to use the same scroller
+ScrollTrigger.defaults({ scroller: SCROLLER });
+
+// Refresh when layout is stable
+window.addEventListener('load', () => ScrollTrigger.refresh());
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => ScrollTrigger.refresh());
+}
+
+
+
 
 /* -----------------------------
    UTILS
