@@ -93,18 +93,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     lenis.on('scroll', () => ScrollTrigger.update());
 
-    ScrollTrigger.scrollerProxy(document.documentElement, {
-      scrollTop(value) {
-        if (arguments.length) {
-          lenis.scrollTo(value, { immediate: true });
-        }
-        return window.scrollY || window.pageYOffset || 0;
-      },
-      getBoundingClientRect() {
-        return { top: 0, left: 0, width: vw(), height: vh() };
-      },
-      pinType: document.documentElement.style.transform ? 'transform' : 'fixed'
-    });
+      ScrollTrigger.scrollerProxy(document.documentElement, {
+         scrollTop(value) {
+          if (arguments.length) {
+            lenis.scrollTo(value, { immediate: true });
+          }
+          return window.scrollY || window.pageYOffset || 0;
+        },
+        getBoundingClientRect() {
+          return { top: 0, left: 0, width: vw(), height: vh() };
+        },
+        // IMPORTANT with Lenis on the html element:
+        pinType: 'transform'
+      });
+
 
     const raf = (time) => {
       lenis.raf(time);
