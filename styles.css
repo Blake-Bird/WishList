@@ -546,7 +546,7 @@ section{
   border-radius:10px;
 }
 
-/* ---------- Reduced Motion ---------- */
+/* ---------- Reduced Motion (TEMP DISABLED FOR DEBUG) ----------
 @media (prefers-reduced-motion: reduce){
   .scene{
     min-height:auto;
@@ -559,6 +559,8 @@ section{
     animation:none!important;
   }
 }
+---------------------------------------------------------------- */
+
 
 /* ---------- Responsive ---------- */
 @media (max-width:1080px){
