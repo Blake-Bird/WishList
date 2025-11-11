@@ -1651,32 +1651,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       try { await document.fonts.ready; } catch (_) {}
     }
 
-    const total = reel.totalDuration() || 12;
-    const scrollDistance = total * (vh() * CONFIG.MASTER_SCROLL_DENSITY);
+    // If duration is suspiciously small, give ScrollTrigger a big fixed runway
+   const total = reel.totalDuration() || 12;
+   const fallbackEnd = 8000; // px
+   const scrollDistance = total < 2
+     ? fallbackEnd
+     : total * (vh() * CONFIG.MASTER_SCROLL_DENSITY);
 
-    ScrollTrigger.create({
-      animation: reel,
-      trigger: main,
-      start: 'top top',
-      end: `+=${scrollDistance}`,
-      scrub: 0.9,
-      pin: true,
-      anticipatePin: 1,
-      onEnter: () => { document.body.style.overflow = 'hidden'; },
-      onLeave: () => { document.body.style.overflow = 'auto'; },
-      onLeaveBack: () => { document.body.style.overflow = 'auto'; },
-      onUpdate: (self) => {
-        const p = self.progress;
-        let mood = 'chrome';
-        if (p > 0.18 && p < 0.42) mood = 'chrome';
-        else if (p >= 0.42 && p < 0.65) mood = 'fabric';
-        else if (p >= 0.65 && p < 0.88) mood = 'glass';
-        else mood = 'chrome';
+   ScrollTrigger.create({
+     id: 'reel',
+     animation: reel,
+     trigger: main,
+     start: 'top top',
+     end: `+=${scrollDistance}`,
+     scrub: 0.9,
+     pin: true,
+     anticipatePin: 1,
+     markers: true, // DEBUG: show start/end & progress
 
-        Light.update(p, mood);
-        Parallax.update(p);
-      }
-    });
+     // DEBUG: do NOT touch body overflow while scroller is the documentElement
+     // onEnter: () => { document.body.style.overflow = 'hidden'; },
+     // onLeave: () => { document.body.style.overflow = 'auto'; },
+     // onLeaveBack: () => { document.body.style.overflow = 'auto'; },
+
+     onUpdate: (self) => {
+       const p = self.progress;
+       let mood = (p > 0.18 && p < 0.42) ? 'chrome'
+               : (p >= 0.42 && p < 0.65) ? 'fabric'
+               : (p >= 0.65 && p < 0.88) ? 'glass'
+               : 'chrome';
+       Light.update(p, mood);
+       Parallax.update(p);
+     }
+   });
+
+   console.log('[BlakeReel] totalDuration:', reel.totalDuration(), 'scrollDistance:', scrollDistance);
+
 
     setTimeout(() => ScrollTrigger.refresh(), 80);
   }
