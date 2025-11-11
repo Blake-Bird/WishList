@@ -149,12 +149,15 @@ section{
   padding:0 1.25rem;
   overflow:hidden; /* Prevent content overflow during animations */
 }
+/* DEBUG: disable content-visibility while pinning main
 @supports (content-visibility:auto){
   .scene{
-    content-visibility:auto;              /* cheaper off-screen */
-    contain-intrinsic-size:1000px;        /* reserve space to avoid jumps */
+    content-visibility:auto;
+    contain-intrinsic-size:1000px;
   }
 }
+*/
+
 
 /* CINEMATIC FIX: Ensure proper stacking */
 .scene::before{
