@@ -1,371 +1,610 @@
 /* ============================================================
    BLAKE — CINEMATIC MASTERPIECE 2025
-   Mesmerizing seamless flow with connected transitions
+   Ultra-Orchestrated Scroll Film
+   Every beat connected. No gaps. No dead frames.
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Enhanced error handling
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-    console.error('GSAP/ScrollTrigger not loaded');
+  /* ----------------------------------------------------------
+     HARD GUARDS
+  ---------------------------------------------------------- */
+  if (typeof gsap === 'undefined') {
+    console.error('[BlakeReel] GSAP not loaded');
     return;
   }
 
-  gsap.registerPlugin(ScrollTrigger);
+  const ST = (typeof ScrollTrigger !== 'undefined')
+    ? ScrollTrigger
+    : (gsap.plugins && gsap.plugins.ScrollTrigger)
+      ? gsap.plugins.ScrollTrigger
+      : null;
 
-  /* -----------------------------
-     CINEMATIC CONFIG
-  --------------------------------*/
+  if (!ST) {
+    console.error('[BlakeReel] ScrollTrigger not loaded');
+    return;
+  }
+
+  gsap.registerPlugin(ST);
+
+  const main = document.querySelector('main');
+  if (!main) {
+    console.error('[BlakeReel] <main> not found');
+    return;
+  }
+
+  /* ----------------------------------------------------------
+     CONFIG — NO MAGIC NUMBERS
+  ---------------------------------------------------------- */
+  const vw = () => Math.max(window.innerWidth, 1);
+  const vh = () => Math.max(window.innerHeight, 1);
+
   const CONFIG = {
     PIXEL_RATIO: Math.min(window.devicePixelRatio || 1, 2),
-    SCROLL_SMOOTH: 0.06,
-    SCROLL_PIXELS_PER_SEC: 720,
-    TRANSITION_DURATION: 1.4,
-    EASING: 'power4.inOut',
-    OVERLAP: 0.4 // More overlap for seamless flow
+    VARIANT: vw() >= 1280 ? 'full' : 'lite',        // full experience vs tuned-down
+    BPM: 96,                                        // global musical grid
+    BEATS_PER_BAR: 4,
+    TIME_SCALE: 1,
+    OVERLAP_BEATS: 1.5,                             // how much scenes overlap
+    MASTER_SCROLL_DENSITY: 0.92,                    // scroll px per sec factor
+    MASTER_GAIN: 0.09,
+    MATERIAL: {
+      chrome: { glint: 0.30 },
+      glass:  { glint: 0.24 },
+      fabric: { shear: 0.18 }
+    }
   };
 
-  // Utility functions
-  const $ = (sel, ctx = document) => ctx.querySelector(sel);
-  const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
-  const map = (v, a, b, c, d) => c + (d - c) * ((v - a) / (b - a));
+  const BEAT = 60 / CONFIG.BPM;                     // seconds per beat
+  const BAR  = BEAT * CONFIG.BEATS_PER_BAR;
+
+  /* ----------------------------------------------------------
+     UTILS
+  ---------------------------------------------------------- */
+  const $  = (sel, ctx = document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const map = (v, a, b, c, d) => {
+    if (a === b) return (c + d) / 2;
+    return c + (d - c) * ((v - a) / (b - a));
+  };
+  const rand = (min, max) => min + Math.random() * (max - min);
 
-  const main = $('main');
-  if (!main) {
-    console.error('<main> element not found');
-    return;
-  }
+  /* ----------------------------------------------------------
+     LENIS + SCROLLER PROXY (SMOOTH + PIN-SAFE)
+  ---------------------------------------------------------- */
+  let lenis = null;
 
-  /* -----------------------------
-     PERFECT LENIS SETUP
-  --------------------------------*/
-  let lenis;
-
-  function initLenis() {
+  (function initLenis() {
     if (typeof Lenis === 'undefined') {
-      console.warn('Lenis not available, using native scroll');
+      console.warn('[BlakeReel] Lenis not found, using native scroll');
       ScrollTrigger.defaults({ scroller: window });
       return;
     }
 
     lenis = new Lenis({
-      lerp: CONFIG.SCROLL_SMOOTH,
-      wheelMultiplier: 0.7,
+      lerp: 0.09,
+      smoothWheel: true,
+      wheelMultiplier: 1.0,
       smoothTouch: true,
       syncTouch: true
     });
 
-    lenis.on('scroll', ScrollTrigger.update);
+    lenis.on('scroll', () => ScrollTrigger.update());
 
-    function raf(time) {
+    ScrollTrigger.scrollerProxy(document.documentElement, {
+      scrollTop(value) {
+        if (arguments.length) {
+          lenis.scrollTo(value, { immediate: true });
+        }
+        return window.scrollY || window.pageYOffset || 0;
+      },
+      getBoundingClientRect() {
+        return { top: 0, left: 0, width: vw(), height: vh() };
+      },
+      pinType: document.documentElement.style.transform ? 'transform' : 'fixed'
+    });
+
+    const raf = (time) => {
       lenis.raf(time);
       requestAnimationFrame(raf);
-    }
+    };
     requestAnimationFrame(raf);
 
-    ScrollTrigger.defaults({ 
-      scroller: window,
+    ScrollTrigger.defaults({
+      scroller: document.documentElement,
       anticipatePin: 1
     });
-  }
+  })();
 
-  initLenis();
-
-  /* -----------------------------
-     ENHANCED AUDIO ENGINE
-  --------------------------------*/
-  const AudioEngine = {
-    chimeHi: () => {
-      const audio = new AudioContext();
-      const oscillator = audio.createOscillator();
-      const gainNode = audio.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audio.destination);
-      oscillator.frequency.value = 880;
-      oscillator.type = 'sine';
-      gainNode.gain.value = 0.1;
-      oscillator.start();
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.5);
-      oscillator.stop(audio.currentTime + 0.5);
+  /* ----------------------------------------------------------
+     AUDIO ENGINE — SINGLE CONTEXT, BPM-LOCKED, MATERIAL TONES
+  ---------------------------------------------------------- */
+  const AudioCtx = {
+    ctx: null,
+    master: null,
+    enabled: true,
+    ensure() {
+      if (this.ctx) return this.ctx;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) {
+        console.warn('[BlakeReel] Web Audio not supported');
+        this.enabled = false;
+        return null;
+      }
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = CONFIG.MASTER_GAIN;
+      this.master.connect(this.ctx.destination);
+      return this.ctx;
     },
-    chimeLo: () => {
-      const audio = new AudioContext();
-      const oscillator = audio.createOscillator();
-      const gainNode = audio.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audio.destination);
-      oscillator.frequency.value = 440;
-      oscillator.type = 'sine';
-      gainNode.gain.value = 0.1;
-      oscillator.start();
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.7);
-      oscillator.stop(audio.currentTime + 0.7);
-    },
-    whoosh: () => {
-      // Simple whoosh sound
-      console.log('whoosh');
-    },
-    unlockOnFirstGesture: () => {}
+    resume() {
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
   };
 
-  AudioEngine.unlockOnFirstGesture();
+  const Audio = {
+    unlocked: false,
+    unlockOnce() {
+      if (this.unlocked) return;
+      const unlock = () => {
+        const ctx = AudioCtx.ensure();
+        if (ctx) AudioCtx.resume();
+        this.unlocked = true;
+        window.removeEventListener('pointerdown', unlock);
+        window.removeEventListener('keydown', unlock);
+      };
+      window.addEventListener('pointerdown', unlock, { once: true });
+      window.addEventListener('keydown', unlock, { once: true });
+    },
+    note(freq, dur, gain = CONFIG.MASTER_GAIN, type = 'sine') {
+      if (!AudioCtx.enabled) return;
+      const ctx = AudioCtx.ensure();
+      if (!ctx) return;
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      g.gain.value = gain;
+      osc.connect(g);
+      g.connect(AudioCtx.master);
+      osc.start(t0);
+      g.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+      osc.stop(t0 + dur);
+    },
+    chromePing() { this.note(1400, 0.12, CONFIG.MASTER_GAIN * 1.1, 'sine'); },
+    fabricSoft() { this.note(520, 0.18, CONFIG.MASTER_GAIN * 0.9, 'sine'); },
+    glassTick() { this.note(980, 0.14, CONFIG.MASTER_GAIN, 'triangle'); },
+    lowPulse()  { this.note(120, 0.25, CONFIG.MASTER_GAIN * 0.6, 'sine'); }
+  };
 
-  /* -----------------------------
-     PRELOAD SYSTEM
-  --------------------------------*/
-  const preloadList = [
-    "s63_3q.jpg","s63_interior.jpg","s63_topdown.jpg",
-    "oc_drivers_sand.jpg","lf_cashmere_hoodie_blue.jpg","bulova_sutton.jpg",
-    "portofino_sage.jpg","portofino_lemon.jpg","portofino_sky.jpg","portofino_black.jpg",
-    "clubmaster_black_gold.png","herod.jpg","cream_blazer.jpg","golden_goose.jpg",
-    "lf_cashmere_joggers.jpg","lf_zip_camel.jpg","lf_zip_nocciola.jpg","lf_chunky_blue.jpg",
-    "blazer_black_gold.jpg","blazer_british_3pc.jpg","blazer_pinstripe.jpg","blazer_velvet.jpg","blazer_windowpane.jpg",
-    "lf_vneck_blue.jpg","lf_vneck_brown.jpg","lf_polo_blue.jpg","velvet_brown.jpg",
-    "collar_bar.jpg","lapel_chain.jpg","pocket_watch_chain.jpg",
-    "suits_blueprint.jpg","purple_velvet.jpg","lightweight_chinos.jpg","cashmere_scarf_black.jpg",
-    "board_dominion.jpg","board_sc_ythe.jpg","board_arknova.jpg","board_terraform.jpg",
-    "ultima_rs.jpg","ferrari_296.jpg","porsche_gt2rs.jpg","huracan_sto.jpg","mclaren_gt4.jpg",
-    "curve_flex.jpg","nuphy_air75.jpg","mx_master3.jpg","dubai_board.jpg",
-    "rl_cable.jpg","brooks_cable.jpg","leather_weekender.jpg","scriveiner_pen.jpg",
-    "1million_elixir.jpg","versace_eros.jpg","afnan_supremacy.jpg",
-    "led_underglow.jpg","dji_mavic.jpg","embody_gaming.jpg",
-    "polo_sweaters.jpg","bonobos_primo.jpg","jcrew_jetsetter.jpg",
-    "fingears.jpg","pocket_watch.jpg","collar_chain.jpg",
-    "autotune_prox.jpg","fl_studio.jpg","gemini_pa.jpg","bonsai.jpg","heat_pad.jpg"
-  ];
+  Audio.unlockOnce();
 
-  function preloadImages(srcs) {
-    return Promise.all(
-      srcs.map(src => new Promise(res => {
-        const img = new Image();
-        img.src = `./assets/${src}`;
-        img.onload = res;
-        img.onerror = res;
-      }))
-    );
-  }
-
-  /* -----------------------------
-     CINEMATIC BRIDGE LAYER
-  --------------------------------*/
-  function createBridgeLayer() {
+  /* ----------------------------------------------------------
+     PROGRAMMATIC LIGHT — TRAVELING KEY LIGHT
+  ---------------------------------------------------------- */
+  const Light = (() => {
     const layer = document.createElement('div');
-    layer.className = 'cinematic-bridge';
+    layer.className = 'blake-light-layer';
     layer.style.cssText = `
-      pointer-events: none;
       position: fixed;
       inset: 0;
-      z-index: 1000;
-      mix-blend-mode: soft-light;
+      pointer-events: none;
+      z-index: 999;
       opacity: 0;
-      background: 
-        radial-gradient(circle at 20% 30%, rgba(212,175,55,0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(123,64,255,0.08) 0%, transparent 50%);
-      transition: opacity 0.5s ease-out;
+      mix-blend-mode: soft-light;
+      will-change: opacity, background-position, background-image;
     `;
     document.body.appendChild(layer);
 
-    function flash(progress) {
-      const intensity = 0.1 + progress * 0.3;
-      layer.style.opacity = Math.min(intensity, 0.4);
+    function apply(p, sceneMood) {
+      // p in [0,1]
+      const warm = sceneMood === 'fabric';
+      const cool = sceneMood === 'glass';
+      const chrome = sceneMood === 'chrome';
+
+      const baseWarm = warm ? 0.18 : chrome ? 0.13 : 0.08;
+      const baseCool = cool ? 0.17 : chrome ? 0.11 : 0.07;
+
+      const x1 = map(p, 0, 1, 8, 78);
+      const y1 = map(Math.sin(p * Math.PI), -1, 1, 40, 60);
+      const x2 = map(1 - p, 0, 1, 88, 18);
+      const y2 = map(Math.cos(p * Math.PI), -1, 1, 32, 68);
+
+      const o = 0.45;
+
+      layer.style.opacity = o;
+      layer.style.backgroundImage = `
+        radial-gradient(120vmax 80vmax at ${x1}% ${y1}%,
+          rgba(255,245,210,${baseWarm}) 0%,
+          transparent 60%),
+        radial-gradient(90vmax 70vmax at ${x2}% ${y2}%,
+          rgba(150,160,255,${baseCool}) 0%,
+          transparent 65%)
+      `;
     }
 
-    function sweep() {
-      gsap.fromTo(layer, 
-        { opacity: 0 },
-        { 
-          opacity: 0.3, 
-          duration: 0.8, 
-          ease: 'power3.out',
-          onComplete: () => {
-            gsap.to(layer, { opacity: 0.1, duration: 0.5 });
-          }
-        }
-      );
-    }
-
-    return { flash, sweep };
-  }
-
-  const bridge = createBridgeLayer();
-
-  /* -----------------------------
-     MESMERIZING SCENE SYSTEM
-  --------------------------------*/
-
-  // Global transition manager
-  const TransitionManager = {
-    currentScene: null,
-    nextScene: null,
-    
-    prepareTransition(fromScene, toScene) {
-      // Create morphing effect between scenes
-      if (fromScene && toScene) {
-        const fromImg = $('img', fromScene);
-        const toImg = $('img', toScene);
-        
-        if (fromImg && toImg) {
-          // Store positions for seamless transition
-          this.storePositions(fromImg, toImg);
-        }
+    return {
+      update(globalProgress, sceneMood) {
+        apply(globalProgress, sceneMood || 'chrome');
       }
+    };
+  })();
+
+  /* ----------------------------------------------------------
+     PARALLAX MANAGER — DRIVEN BY REEL PROGRESS + VELOCITY
+  ---------------------------------------------------------- */
+  const Parallax = (() => {
+    const layers = [];
+    let lastProgress = 0;
+
+    return {
+      add(el, depth = 0.5) {
+        if (!el) return;
+        layers.push({ el, depth });
+      },
+      update(progress) {
+        const delta = progress - lastProgress;
+        lastProgress = progress;
+        const velocity = clamp(delta * 40, -2, 2); // tuned
+
+        layers.forEach(({ el, depth }) => {
+          const offset = velocity * depth * 18; // px
+          gsap.to(el, {
+            y: offset,
+            duration: 0.35,
+            ease: 'power2.out',
+            overwrite: true
+          });
+        });
+      }
+    };
+  })();
+
+  /* ----------------------------------------------------------
+     MOTIFS — GLINTS / SHEENS / SHEAR (REUSABLE)
+  ---------------------------------------------------------- */
+  const Motif = {
+    glint(el, strength = 0.28, dur = BEAT * 1.1) {
+      if (!el) return gsap.timeline();
+      const g = document.createElement('div');
+      g.style.cssText = `
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        mix-blend-mode: screen;
+        opacity: 0;
+        background: linear-gradient(
+          100deg,
+          transparent 0%,
+          rgba(255,255,255,${strength}) 45%,
+          transparent 70%
+        );
+        transform: translateX(-130%);
+      `;
+      if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+      el.appendChild(g);
+
+      const tl = gsap.timeline();
+      tl.to(g, {
+        opacity: 1,
+        xPercent: 240,
+        duration: dur,
+        ease: 'power3.inOut'
+      }).to(g, {
+        opacity: 0,
+        duration: dur * 0.35,
+        ease: 'power1.out'
+      }, '-=0.22')
+      .add(() => g.remove());
+      return tl;
     },
-    
-    storePositions(fromEl, toEl) {
-      // Could be used for advanced morphing effects
+
+    sheenCircular(el, strength = 0.18, dur = BEAT * 1.4) {
+      if (!el) return gsap.timeline();
+      const s = document.createElement('div');
+      s.style.cssText = `
+        position: absolute;
+        inset: 14%;
+        border-radius: 50%;
+        pointer-events: none;
+        mix-blend-mode: screen;
+        opacity: 0;
+        background:
+          conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            rgba(255,255,255,${strength}) 10deg,
+            transparent 26deg
+          );
+      `;
+      if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+      el.appendChild(s);
+
+      const tl = gsap.timeline();
+      tl.to(s, {
+        opacity: 0.52,
+        rotation: 360,
+        duration: dur,
+        ease: 'none'
+      }).to(s, {
+        opacity: 0,
+        duration: dur * 0.35,
+        ease: 'power1.out'
+      }, '-=0.18')
+      .add(() => s.remove());
+      return tl;
+    },
+
+    fabricShear(el, dur = BEAT * 0.9) {
+      if (!el) return gsap.timeline();
+      const tl = gsap.timeline();
+      tl.fromTo(el,
+        { skewY: 0.0001 },
+        { skewY: 3.6, duration: dur * 0.4, ease: 'power2.in' }
+      ).to(el, {
+        skewY: 0,
+        duration: dur * 0.6,
+        ease: 'power3.out'
+      });
+      return tl;
     }
   };
 
+  /* ----------------------------------------------------------
+     SVG MASK UTIL — FOR WIPES
+  ---------------------------------------------------------- */
+  function ensureMask(id) {
+    let svg = document.getElementById('blake-masks');
+    if (!svg) {
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.id = 'blake-masks';
+      svg.setAttribute('width', '0');
+      svg.setAttribute('height', '0');
+      svg.style.position = 'absolute';
+      svg.style.overflow = 'hidden';
+      document.body.appendChild(svg);
+    }
+
+    const maskId = `mask-${id}`;
+    let mask = svg.querySelector(`#${maskId}`);
+    if (!mask) {
+      mask = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+      mask.id = maskId;
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', '0');
+      r.setAttribute('y', '0');
+      r.setAttribute('width', '0');
+      r.setAttribute('height', '0');
+      mask.appendChild(r);
+      svg.appendChild(mask);
+    }
+
+    return {
+      id: maskId,
+      rect: mask.firstChild
+    };
+  }
+
+  /* ----------------------------------------------------------
+     MASTER REEL
+  ---------------------------------------------------------- */
+  const reel = gsap.timeline({
+    paused: true,
+    defaults: { ease: 'power4.inOut' }
+  });
+
+  let reelEnd = 0;
+
+  function addScene(label, tl, overlapBeats = CONFIG.OVERLAP_BEATS) {
+    if (!tl || typeof tl.totalDuration !== 'function') return;
+    const d = tl.totalDuration();
+    if (!d || d <= 0) return;
+
+    const overlap = Math.max(0, overlapBeats) * BEAT;
+    const startTime = Math.max(0, reelEnd - overlap);
+
+    reel.add(label, startTime);
+    reel.add(tl, startTime);
+    reelEnd = Math.max(reelEnd, startTime + d);
+  }
+
+  /* ----------------------------------------------------------
+     SCENES — EACH FULLY COMPOSED, NO DEAD AIR
+  ---------------------------------------------------------- */
+
+  // HERO
   function heroScene() {
     const sec = $('section[data-scene="hero"]');
     if (!sec) return gsap.timeline();
-
-    const line = $('.hero-line', sec);
     const h1 = $('.hero-copy h1', sec);
-    const p = $('.hero-copy p', sec);
+    const p  = $('.hero-copy p', sec);
+    const line = $('.hero-line', sec);
 
     const tl = gsap.timeline();
-    
-    // Hero text emerges from light
-    tl.fromTo(h1, 
-      { 
-        y: 100, 
-        opacity: 0, 
-        rotationX: 85,
-        filter: 'blur(20px) brightness(2)',
-        transformOrigin: '50% 0%'
-      },
-      { 
-        y: 0, 
-        opacity: 1, 
-        rotationX: 0,
-        filter: 'blur(0px) brightness(1)',
-        duration: 1.8, 
-        ease: 'power4.out'
-      },
-      0.2
-    )
-    .fromTo(p,
-      {
-        y: 60,
-        opacity: 0,
-        filter: 'blur(15px)'
-      },
-      {
-        y: 0,
-        opacity: 1,
-        filter: 'blur(0px)',
-        duration: 1.4,
-        ease: 'power3.out'
-      },
-      0.6
-    )
-    .fromTo(line,
-      { 
-        width: 0, 
-        opacity: 0,
-        scaleX: 0.5
-      },
-      { 
-        width: 300, 
-        opacity: 1,
-        scaleX: 1,
-        duration: 1.6, 
-        ease: 'elastic.out(1,0.8)'
-      },
-      0.8
-    )
-    .call(() => {
-      bridge.sweep();
-      AudioEngine.chimeHi();
-    }, null, 1.2);
 
+    tl.fromTo(sec, { opacity: 0 }, { opacity: 1, duration: BEAT * 0.5, ease: 'power2.out' }, 0);
+
+    if (h1) {
+      tl.fromTo(h1,
+        {
+          y: vh() * 0.14,
+          opacity: 0,
+          rotationX: 78,
+          filter: 'blur(20px) brightness(1.8)',
+          transformOrigin: '50% 0%'
+        },
+        {
+          y: 0,
+          opacity: 1,
+          rotationX: 0,
+          filter: 'blur(0px) brightness(1)',
+          duration: BAR * 0.9,
+          ease: 'power4.out'
+        },
+        BEAT * 0.5
+      );
+      tl.add(Motif.glint(h1, CONFIG.MATERIAL.chrome.glint, BEAT * 1.3), BEAT * 1.2);
+    }
+
+    if (p) {
+      tl.fromTo(p,
+        {
+          y: vh() * 0.06,
+          opacity: 0,
+          filter: 'blur(12px)'
+        },
+        {
+          y: 0,
+          opacity: 1,
+          filter: 'blur(0px)',
+          duration: BEAT * 2,
+          ease: 'power3.out'
+        },
+        BEAT * 1.3
+      );
+    }
+
+    if (line) {
+      tl.fromTo(line,
+        {
+          scaleX: 0,
+          transformOrigin: '0% 50%',
+          opacity: 0
+        },
+        {
+          scaleX: 1,
+          opacity: 1,
+          duration: BEAT * 1.4,
+          ease: 'power3.out'
+        },
+        BEAT * 1.6
+      );
+    }
+
+    tl.add(() => {
+      Audio.chromePing();
+      Audio.lowPulse();
+    }, BEAT * 1.5);
+
+    Parallax.add(sec, 0.35);
     return tl;
   }
 
+  // S63 — CHROME / SPEED / GLINT CHOREOGRAPHY
   function s63Scene() {
-    const el = $('section[data-scene="s63"]');
-    if (!el) return gsap.timeline();
-
-    const frames = $$('.s63', el);
-    const chips = $$('.spec-chips li', el);
+    const sec = $('section[data-scene="s63"]');
+    if (!sec) return gsap.timeline();
+    const frames = $$('.s63', sec);
+    const chips  = $$('.spec-chips li', sec);
 
     const tl = gsap.timeline();
 
-    // Car emerges with cinematic sweep
-    if (frames.length >= 3) {
-      tl.set(frames, { opacity: 0, scale: 1.2, rotationY: -30 });
-      tl.set(frames[0], { opacity: 1, scale: 1, rotationY: 0 });
+    if (frames.length) {
+      tl.set(frames, {
+        opacity: 0,
+        scale: 1.08,
+        rotationY: -22,
+        transformPerspective: 900,
+        transformOrigin: '50% 50%'
+      });
 
-      // Cinematic car angle transitions
+      // frame 1 in
       tl.to(frames[0], {
-        opacity: 0,
-        scale: 1.1,
-        rotationY: 15,
-        duration: 1.2,
-        ease: 'power3.inOut'
-      }, 0.5)
-      .to(frames[1], {
         opacity: 1,
-        duration: 1.0,
-        ease: 'power2.out'
-      }, 0.5)
-      .to(frames[1], {
+        rotationY: 0,
+        scale: 1,
+        duration: BEAT * 1.4,
+        ease: 'power3.out'
+      }, 0);
+
+      tl.add(Motif.glint(frames[0], CONFIG.MATERIAL.chrome.glint, BEAT * 0.9), BEAT * 0.4);
+
+      // frame 1 -> frame 2
+      const f1 = frames[0];
+      const f2 = frames[1] || frames[0];
+      tl.to(f1, {
         opacity: 0,
-        y: -40,
-        scale: 0.9,
+        rotationY: 18,
+        scale: 1.04,
+        duration: BEAT * 1.0,
+        ease: 'power2.inOut'
+      }, BEAT * 1.4);
+
+      tl.to(f2, {
+        opacity: 1,
+        rotationY: 0,
+        y: 0,
+        duration: BEAT * 1.0,
+        ease: 'power2.out'
+      }, BEAT * 1.4);
+
+      tl.add(Motif.glint(f2, CONFIG.MATERIAL.chrome.glint, BEAT * 0.8), BEAT * 2.0);
+
+      // frame 2 -> frame 3
+      const f3 = frames[2] || f2;
+      tl.to(f2, {
+        opacity: 0,
+        y: -vh() * 0.03,
+        scale: 0.96,
         rotationY: -10,
-        duration: 1.4,
+        duration: BEAT * 1.2,
         ease: 'power3.inOut'
-      }, 1.8)
-      .to(frames[2], {
+      }, BEAT * 2.6);
+
+      tl.to(f3, {
         opacity: 1,
         y: 0,
         scale: 1,
         rotationY: 0,
-        duration: 1.6,
+        duration: BEAT * 1.3,
         ease: 'power4.out'
-      }, 1.8);
+      }, BEAT * 2.6);
+
+      tl.add(Motif.glint(f3, CONFIG.MATERIAL.chrome.glint, BEAT * 1.0), BEAT * 3.3);
     }
 
-    // Spec chips fly in with purpose
-    tl.from(chips, {
-      y: 80,
-      opacity: 0,
-      rotationX: 60,
-      stagger: {
-        each: 0.15,
-        from: 'random'
-      },
-      duration: 0.9,
-      ease: 'back.out(1.7)'
-    }, 1.0);
+    if (chips.length) {
+      tl.from(chips, {
+        y: 26,
+        opacity: 0,
+        rotationX: 48,
+        transformOrigin: '50% 0%',
+        stagger: {
+          each: BEAT * 0.12,
+          from: 'center'
+        },
+        duration: BEAT * 0.8,
+        ease: 'back.out(1.7)'
+      }, BEAT * 1.8);
+    }
 
-    // Audio and bridge effects
-    tl.call(() => {
-      bridge.flash(0.7);
-      AudioEngine.whoosh();
-      AudioEngine.chimeHi();
-    }, null, 0.8);
+    tl.add(() => {
+      Audio.chromePing();
+    }, BEAT * 0.8);
 
+    Parallax.add(sec, 0.55);
     return tl;
   }
 
+  // DRIVERS — SOFT FABRIC + SAND
   function driversScene() {
-    const el = $('section[data-scene="drivers"]');
-    if (!el) return gsap.timeline();
-    const img = $('img', el);
+    const sec = $('section[data-scene="drivers"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
     if (!img) return gsap.timeline();
 
     const tl = gsap.timeline();
 
-    // Shoes materialize with texture reveal
     tl.fromTo(img,
       {
-        scale: 1.3,
-        y: 100,
-        rotation: -5,
-        filter: 'contrast(1.4) saturate(1.3) blur(8px) brightness(0.8)',
+        scale: 1.16,
+        y: vh() * 0.12,
+        rotation: -4,
+        filter: 'contrast(1.25) saturate(1.18) blur(8px) brightness(0.86)',
         transformOrigin: '50% 100%'
       },
       {
@@ -373,115 +612,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         y: 0,
         rotation: 0,
         filter: 'contrast(1) saturate(1) blur(0px) brightness(1)',
-        duration: 1.8,
+        duration: BAR * 0.9,
         ease: 'power4.out'
-      }
+      },
+      0
     );
 
-    // Subtle hover effect preparation
-    img.addEventListener('mouseenter', () => {
-      gsap.to(img, {
-        scale: 1.02,
-        y: -5,
-        duration: 0.6,
-        ease: 'power2.out'
-      });
-    });
+    tl.add(Motif.fabricShear(img, BEAT), BEAT * 0.6);
+    tl.add(() => Audio.fabricSoft(), BEAT * 0.7);
 
-    img.addEventListener('mouseleave', () => {
-      gsap.to(img, {
-        scale: 1,
-        y: 0,
-        duration: 0.8,
-        ease: 'elastic.out(1,0.6)'
-      });
-    });
-
-    tl.call(() => {
-      bridge.flash(0.4);
-      AudioEngine.chimeLo();
-    }, null, 1.2);
-
+    Parallax.add(sec, 0.4);
     return tl;
   }
 
+  // HOODIE — CASHMERE UNFOLD
   function hoodieScene() {
-    const el = $('section[data-scene="hoodie"]');
-    if (!el) return gsap.timeline();
-    const img = $('img', el);
+    const sec = $('section[data-scene="hoodie"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
     if (!img) return gsap.timeline();
 
     const tl = gsap.timeline();
 
-    // Cashmere unfolds with fabric-like motion
     tl.fromTo(img,
       {
-        y: -80,
-        scale: 1.15,
-        rotation: -8,
-        filter: 'brightness(0.7) contrast(1.2) hue-rotate(-10deg)',
-        transformOrigin: '50% 0%'
+        y: -vh() * 0.08,
+        scale: 1.14,
+        rotation: -5,
+        filter: 'brightness(0.82) contrast(1.1)'
       },
       {
         y: 0,
         scale: 1,
         rotation: 0,
-        filter: 'brightness(1) contrast(1) hue-rotate(0deg)',
-        duration: 1.6,
-        ease: 'elastic.out(1,0.5)'
-      }
+        filter: 'brightness(1) contrast(1)',
+        duration: BAR * 0.75,
+        ease: 'power3.out'
+      },
+      0
     );
 
-    // Create stitching reveal effect
-    const stitchReveal = document.createElement('div');
-    stitchReveal.style.cssText = `
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(45deg, 
-        transparent 45%, 
-        rgba(255,255,255,0.3) 50%, 
-        transparent 55%);
-      opacity: 0;
-      mix-blend-mode: overlay;
-      border-radius: 24px;
-      pointer-events: none;
-    `;
-    el.appendChild(stitchReveal);
+    tl.add(Motif.fabricShear(img, BEAT * 0.9), BEAT * 0.35);
+    tl.add(() => Audio.fabricSoft(), BEAT * 0.4);
 
-    tl.to(stitchReveal, {
-      opacity: 1,
-      duration: 0.3
-    }, 0.8)
-    .to(stitchReveal, {
-      backgroundPosition: '200% 0',
-      duration: 1.2,
-      ease: 'power2.inOut'
-    }, 0.8)
-    .to(stitchReveal, {
-      opacity: 0,
-      duration: 0.5
-    }, 1.8);
-
-    tl.call(AudioEngine.chimeHi, null, 1.0);
-
+    Parallax.add(sec, 0.38);
     return tl;
   }
 
+  // WATCH — MECHANICAL PRECISION
   function watchScene() {
-    const el = $('section[data-scene="watch"]');
-    if (!el) return gsap.timeline();
-    const img = $('img', el);
-    const date = $('.date-window', el);
-    if (!img || !date) return gsap.timeline();
+    const sec = $('section[data-scene="watch"]');
+    if (!sec) return gsap.timeline();
+    const img  = $('img', sec);
+    const date = $('.date-window', sec);
 
     const tl = gsap.timeline();
 
-    // Watch emerges with mechanical precision
     tl.fromTo(img,
       {
-        scale: 1.12,
+        scale: 1.08,
         opacity: 0,
-        rotationY: -25,
+        rotationY: -16,
         filter: 'blur(5px)'
       },
       {
@@ -489,405 +680,408 @@ document.addEventListener('DOMContentLoaded', async () => {
         opacity: 1,
         rotationY: 0,
         filter: 'blur(0px)',
-        duration: 1.4,
+        duration: BEAT * 1.2,
         ease: 'power3.out'
-      }
+      },
+      0
     );
 
-    // Date window flips with mechanical motion
-    tl.fromTo(date,
-      {
-        rotationX: -120,
-        opacity: 0,
-        scale: 0.6,
-        transformOrigin: '50% 0%',
-        y: 20
-      },
-      {
-        rotationX: 0,
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        duration: 0.9,
-        ease: 'back.out(2)'
-      },
-      0.8
-    );
+    if (date) {
+      tl.fromTo(date,
+        {
+          rotationX: -110,
+          opacity: 0,
+          scale: 0.7,
+          y: 14,
+          transformOrigin: '50% 0%'
+        },
+        {
+          rotationX: 0,
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: BEAT * 0.9,
+          ease: 'back.out(2)'
+        },
+        BEAT * 0.6
+      );
+    }
 
-    // Create watch hands sweep effect
-    const handsSweep = document.createElement('div');
-    handsSweep.style.cssText = `
-      position: absolute;
-      inset: 20%;
-      background: conic-gradient(from 0deg, 
-        transparent 0deg, 
-        rgba(255,255,255,0.2) 10deg, 
-        transparent 20deg);
-      opacity: 0;
-      mix-blend-mode: screen;
-      border-radius: 50%;
-      pointer-events: none;
-    `;
-    el.appendChild(handsSweep);
+    tl.add(Motif.sheenCircular(sec, CONFIG.MATERIAL.glass.glint, BEAT * 1.4), BEAT * 0.9);
+    tl.add(() => {
+      Audio.glassTick();
+      Audio.lowPulse();
+    }, BEAT * 0.9);
 
-    tl.to(handsSweep, {
-      opacity: 0.4,
-      rotation: 360,
-      duration: 3,
-      ease: 'none',
-      repeat: -1
-    }, 1.2);
-
-    tl.call(() => {
-      AudioEngine.chimeHi();
-      AudioEngine.chimeLo();
-    }, null, 1.0);
-
+    Parallax.add(sec, 0.6);
     return tl;
   }
 
+  // LINEN — COLOR FIELD FLOW
   function linenScene() {
-    const el = $('section[data-scene="linen"]');
-    if (!el) return gsap.timeline();
-    const imgs = $$('.color-weave img', el);
+    const sec = $('section[data-scene="linen"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('.color-weave img', sec);
     if (!imgs.length) return gsap.timeline();
 
     const tl = gsap.timeline();
 
-    // Linen shirts flow in like fabric
     tl.from(imgs, {
-      xPercent: (i) => (i - 2) * 120,
+      xPercent: (i) => (i - Math.floor(imgs.length / 2)) * 105,
       opacity: 0,
-      rotationY: 45,
+      rotationY: 34,
       stagger: {
-        each: 0.2,
+        each: BEAT * 0.16,
         from: 'center'
       },
-      duration: 1.2,
+      duration: BEAT * 0.9,
       ease: 'power3.out'
-    });
+    }, 0);
 
-    // Continuous gentle flow
     tl.to(imgs, {
       xPercent: -100 * (imgs.length - 1),
-      duration: 8,
+      duration: BAR * 2.1,
       ease: 'none',
       modifiers: {
         xPercent: gsap.utils.wrap(-100, 400)
       }
-    }, 1.0);
+    }, BEAT * 0.7);
 
+    tl.add(() => Audio.fabricSoft(), BEAT * 0.5);
+
+    Parallax.add(sec, 0.32);
     return tl;
   }
 
+  // CLUBMASTER — GLASS & GOLD
   function clubmasterScene() {
-    const el = $('section[data-scene="clubmaster"]');
-    if (!el) return gsap.timeline();
-    const frame = $('.frame', el);
-    const lens = $('.lens-bg', el);
-    if (!frame || !lens) return gsap.timeline();
+    const sec = $('section[data-scene="clubmaster"]');
+    if (!sec) return gsap.timeline();
+    const frame = $('.frame', sec);
+    const lens  = $('.lens-bg', sec);
 
     const tl = gsap.timeline();
 
-    // Glasses descend with vintage elegance
     tl.fromTo(frame,
       {
-        y: 80,
+        y: 26,
         opacity: 0,
-        rotationX: 45,
+        rotationX: 34,
         transformOrigin: '50% 50%'
       },
       {
         y: 0,
         opacity: 1,
         rotationX: 0,
-        duration: 1.4,
+        duration: BEAT * 1.2,
         ease: 'power4.out'
+      },
+      0
+    );
+
+    if (lens) {
+      tl.fromTo(lens,
+        {
+          opacity: 0,
+          scale: 0.9,
+          backgroundPosition: '-130% 0'
+        },
+        {
+          opacity: 0.65,
+          scale: 1,
+          backgroundPosition: '230% 0',
+          duration: BEAT * 1.6,
+          ease: 'power2.inOut'
+        },
+        BEAT * 0.25
+      );
+    }
+
+    // interactive tilt with inertia-like feel
+    if (frame) {
+      const setRX = gsap.quickSetter(frame, 'rotationX', 'deg');
+      const setRY = gsap.quickSetter(frame, 'rotationY', 'deg');
+      frame.addEventListener('mousemove', (e) => {
+        const r = frame.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const nx = clamp((e.clientX - r.left) / r.width, 0, 1);
+        const ny = clamp((e.clientY - r.top) / r.height, 0, 1);
+        const rx = map(ny, 0, 1, 9, -9);
+        const ry = map(nx, 0, 1, -9, 9);
+        gsap.to(frame, {
+          rotationX: rx,
+          rotationY: ry,
+          duration: BEAT * 0.45,
+          ease: 'power2.out',
+          overwrite: true
+        });
+      });
+
+      frame.addEventListener('mouseleave', () => {
+        gsap.to(frame, {
+          rotationX: 0,
+          rotationY: 0,
+          duration: BEAT * 0.8,
+          ease: 'elastic.out(1, 0.5)',
+          overwrite: true
+        });
+      });
+    }
+
+    tl.add(Motif.glint(frame || sec, CONFIG.MATERIAL.glass.glint, BEAT * 1.0), BEAT * 0.5);
+    tl.add(() => Audio.glassTick(), BEAT * 0.6);
+
+    Parallax.add(sec, 0.5);
+    return tl;
+  }
+
+  // CHROME TO GLASS WIPE (S63 -> WATCH)
+  function carToWatchWipe() {
+    const s63  = $('section[data-scene="s63"]');
+    const watch = $('section[data-scene="watch"]');
+    if (!s63 || !watch) return gsap.timeline();
+
+    const tl = gsap.timeline();
+
+    const { rect, id } = ensureMask('car-watch');
+    rect.setAttribute('x', '0');
+    rect.setAttribute('y', '0');
+    rect.setAttribute('width', '0');
+    rect.setAttribute('height', String(vh() * 1.2));
+
+    s63.style.clipPath   = `url(#${id})`;
+    watch.style.clipPath = `url(#${id})`;
+
+    tl.to(rect, {
+      attr: { width: vw() * 1.4 },
+      duration: BEAT * 1.2,
+      ease: 'power3.inOut',
+      onUpdate: () => {},
+      onComplete: () => {
+        s63.style.clipPath = '';
+        watch.style.clipPath = '';
       }
-    );
+    }, 0);
 
-    // Lens reflection sweeps across
-    tl.fromTo(lens,
-      {
-        opacity: 0,
-        scale: 0.8,
-        backgroundPosition: '-100% 0'
-      },
-      {
-        opacity: 0.6,
-        scale: 1,
-        backgroundPosition: '200% 0',
-        duration: 2.0,
-        ease: 'power2.inOut'
-      },
-      0.3
-    );
-
-    // 3D interactive tilt
-    frame.style.transformOrigin = '50% 50%';
-    frame.addEventListener('mousemove', (e) => {
-      const r = frame.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
-      const y = (e.clientY - r.top) / r.height;
-      const rx = map(y, 0, 1, 12, -12);
-      const ry = map(x, 0, 1, -12, 12);
-      
-      gsap.to(frame, {
-        rotationX: rx,
-        rotationY: ry,
-        duration: 0.8,
-        ease: 'power2.out'
-      });
-    });
-
-    frame.addEventListener('mouseleave', () => {
-      gsap.to(frame, {
-        rotationX: 0,
-        rotationY: 0,
-        duration: 1.2,
-        ease: 'elastic.out(1,0.5)'
-      });
-    });
-
-    tl.call(AudioEngine.chimeHi, null, 0.6);
+    tl.add(() => {
+      Audio.chromePing();
+      Audio.glassTick();
+    }, BEAT * 0.3);
 
     return tl;
   }
 
-  // Continue with other scenes following the same mesmerizing pattern...
-  // [Additional scene functions would follow the same advanced pattern]
+  /* ----------------------------------------------------------
+     BUILD MASTER REEL — ALL CONNECTED, NO GAPS
+  ---------------------------------------------------------- */
+  addScene('hero',       heroScene(),          0);
+  addScene('s63',        s63Scene());
+  addScene('drivers',    driversScene());
+  addScene('hoodie',     hoodieScene());
+  addScene('watch',      watchScene());
+  addScene('linen',      linenScene());
+  addScene('clubmaster', clubmasterScene());
+  addScene('car→watch',  carToWatchWipe(),    CONFIG.OVERLAP_BEATS * 0.7);
 
-  /* -----------------------------
-     MASTER REEL - PERFECTLY SYNCHRONIZED
-  --------------------------------*/
-  const reel = gsap.timeline({
-    paused: true,
-    defaults: { 
-      ease: CONFIG.EASING
-    }
-  });
+  /* ----------------------------------------------------------
+     PRELOAD (OPTIONAL: FILL WITH USED ASSETS)
+  ---------------------------------------------------------- */
+  const preloadList = []; // For perfection, include only actually-used image URLs
 
-  // Enhanced scene adder with intelligent overlap
-  function addScene(label, tl, overlap = CONFIG.OVERLAP) {
-    if (!tl || typeof tl.totalDuration !== 'function') return;
-    const d = tl.totalDuration();
-    if (!d || d <= 0) return;
-    
-    // Add scene with overlap for seamless flow
-    reel.addLabel(label, Math.max(0, reel.duration() - overlap));
-    reel.add(tl, '>');
-    
-    console.log(`Added scene: ${label} at ${reel.duration().toFixed(2)}s`);
+  function preloadImages(list) {
+    if (!list || !list.length) return Promise.resolve();
+    return Promise.all(list.map(src => new Promise(res => {
+      const img = new Image();
+      img.src = src;
+      const done = () => res(src);
+      img.onload = done;
+      img.onerror = done;
+      if (img.decode) img.decode().then(done).catch(done);
+    })));
   }
 
-  // Build the cinematic experience
-  addScene('hero', heroScene(), 0);
-  addScene('s63', s63Scene(), 0.3);
-  addScene('drivers', driversScene(), 0.3);
-  addScene('hoodie', hoodieScene(), 0.3);
-  addScene('watch', watchScene(), 0.3);
-  addScene('linen', linenScene(), 0.3);
-  addScene('clubmaster', clubmasterScene(), 0.3);
-  // Add remaining scenes with the same pattern...
-
-  /* -----------------------------
-     PERFECT INITIALIZATION
-  --------------------------------*/
+  /* ----------------------------------------------------------
+     START — SCROLLTRIGGER + LIGHT + PARALLAX SYNC
+  ---------------------------------------------------------- */
   async function start() {
     try {
       await Promise.race([
         preloadImages(preloadList),
-        new Promise(res => setTimeout(res, 1800))
+        new Promise(res => setTimeout(res, 1000))
       ]);
-      console.log('Assets loaded successfully');
     } catch (e) {
-      console.warn('Preload continued with minor issues:', e);
+      console.warn('[BlakeReel] Preload warning', e);
     }
 
-    // Ensure fonts are ready
     if (document.fonts && document.fonts.ready) {
-      try { 
-        await document.fonts.ready; 
-      } catch(e) {
-        console.warn('Font loading completed with issues');
-      }
+      try { await document.fonts.ready; } catch (_) {}
     }
 
-    const totalDuration = reel.totalDuration() || 15;
-    const scrollDistance = totalDuration * CONFIG.SCROLL_PIXELS_PER_SEC;
+    const total = reel.totalDuration() || 12;
+    const scrollDistance =
+      total * (vh() * CONFIG.MASTER_SCROLL_DENSITY);
 
-    console.log(`🎬 Cinematic Reel: ${totalDuration.toFixed(1)}s duration, ${scrollDistance}px scroll`);
-
-    // Perfect ScrollTrigger configuration
     ScrollTrigger.create({
       animation: reel,
       trigger: main,
       start: 'top top',
       end: `+=${scrollDistance}`,
-      scrub: 0.8, // Smooth scrub for cinematic feel
+      scrub: 0.9,
       pin: true,
       anticipatePin: 1,
-      onEnter: () => {
-        document.body.style.overflow = 'hidden';
-        console.log('🎬 Cinematic experience started');
-      },
-      onLeave: () => {
-        document.body.style.overflow = 'auto';
-        console.log('🎬 Cinematic experience completed');
-      },
+      onEnter: () => { document.body.style.overflow = 'hidden'; },
+      onLeave: () => { document.body.style.overflow = 'auto'; },
+      onLeaveBack: () => { document.body.style.overflow = 'auto'; },
       onUpdate: (self) => {
         const p = self.progress;
-        // Dynamic bridge layer intensity
-        const intensity = Math.sin(p * Math.PI) * 0.5 + 0.3;
-        bridge.flash(intensity);
+        // Global light mood: blend based on position in reel
+        let mood = 'chrome';
+        if (p > 0.18 && p < 0.42) mood = 'chrome';
+        else if (p >= 0.42 && p < 0.6) mood = 'fabric';
+        else if (p >= 0.6 && p < 0.8) mood = 'glass';
+        else mood = 'chrome';
+
+        Light.update(p, mood);
+        Parallax.update(p);
       },
       onRefresh: () => {
-        console.log('🔄 ScrollTrigger refreshed');
+        // Keep layout/scroll mapping tight
       }
     });
 
-    // Final initialization
-    setTimeout(() => {
-      ScrollTrigger.refresh();
-      console.log('✅ Cinematic experience ready');
-    }, 200);
+    setTimeout(() => ScrollTrigger.refresh(), 80);
   }
 
-  /* -----------------------------
-     ADVANCED MICRO INTERACTIONS
-  --------------------------------*/
-  function initAdvancedInteractions() {
+  /* ----------------------------------------------------------
+     MICRO INTERACTIONS — CONSISTENT SPRING FEEL
+  ---------------------------------------------------------- */
+  function initInteractions() {
     const interactiveElements = $$('.btn, [data-interactive]');
-    
+
     interactiveElements.forEach((el) => {
-      // Advanced magnetic effect
-      let magneticTween;
-      
       el.addEventListener('mouseenter', () => {
-        if (magneticTween) magneticTween.kill();
-        
-        magneticTween = gsap.to(el, {
+        gsap.to(el, {
           y: -4,
-          scale: 1.06,
-          rotation: Math.random() * 2 - 1,
-          duration: 0.4,
+          scale: 1.05,
+          rotation: rand(-1, 1),
+          duration: BEAT * 0.6,
           ease: 'back.out(2)',
-          filter: 'brightness(1.2) drop-shadow(0 8px 20px rgba(212,175,55,0.3))'
+          overwrite: true,
+          filter: 'brightness(1.12) drop-shadow(0 10px 24px rgba(212,175,55,0.32))'
         });
       });
-      
+
       el.addEventListener('mouseleave', () => {
-        if (magneticTween) magneticTween.kill();
-        
         gsap.to(el, {
           y: 0,
           scale: 1,
           rotation: 0,
-          duration: 0.6,
-          ease: 'elastic.out(1,0.6)',
-          filter: 'brightness(1) drop-shadow(0 4px 12px rgba(0,0,0,0.2))'
+          duration: BEAT * 0.8,
+          ease: 'elastic.out(1, 0.6)',
+          overwrite: true,
+          filter: 'brightness(1) drop-shadow(0 4px 12px rgba(0,0,0,0.22))'
         });
       });
 
-      // Advanced ripple effect
       el.addEventListener('click', (e) => {
         const rect = el.getBoundingClientRect();
-        const size = Math.max(rect.width, rect.height) * 1.5;
-        
+        const size = Math.max(rect.width, rect.height) * 1.35;
+
         const ripple = document.createElement('div');
         ripple.style.cssText = `
           position: absolute;
           border-radius: 50%;
-          background: radial-gradient(circle, 
-            rgba(255,255,255,0.8) 0%, 
-            rgba(212,175,55,0.4) 30%, 
-            transparent 70%);
-          transform: scale(0);
           pointer-events: none;
+          transform: scale(0);
+          mix-blend-mode: screen;
+          opacity: 0.95;
           width: ${size}px;
           height: ${size}px;
-          left: ${e.clientX - rect.left - size/2}px;
-          top: ${e.clientY - rect.top - size/2}px;
-          mix-blend-mode: screen;
-          filter: blur(1px);
+          left: ${e.clientX - rect.left - size / 2}px;
+          top: ${e.clientY - rect.top - size / 2}px;
+          background: radial-gradient(circle,
+            rgba(255,255,255,0.96) 0%,
+            rgba(212,175,55,0.42) 26%,
+            transparent 70%);
         `;
-        
-        el.style.position = 'relative';
+
+        const cs = getComputedStyle(el);
+        if (cs.position === 'static') el.style.position = 'relative';
+
         el.appendChild(ripple);
-        
+
         gsap.to(ripple, {
-          scale: 2.5,
+          scale: 2.4,
           opacity: 0,
-          duration: 1.2,
+          duration: BEAT * 1.6,
           ease: 'power3.out',
           onComplete: () => ripple.remove()
         });
-        
-        AudioEngine.chimeHi();
+
+        Audio.chromePing();
       });
     });
 
-    // Enhanced navigation scroll effect
-    window.addEventListener('scroll', () => {
-      const scrolled = window.pageYOffset > 50;
-      const nav = $('.nav');
-      if (nav) {
+    // Nav morph on scroll
+    const nav = $('.nav');
+    if (nav) {
+      window.addEventListener('scroll', () => {
+        const scrolled = (window.scrollY || 0) > 40;
         gsap.to(nav, {
-          background: scrolled ? 'rgba(10,10,10,0.95)' : 'rgba(10,10,10,0.7)',
-          padding: scrolled ? '15px 30px' : '20px 30px',
-          duration: 0.3,
-          ease: 'power2.out'
+          background: scrolled
+            ? 'rgba(8,8,8,0.96)'
+            : 'rgba(8,8,8,0.76)',
+          padding: scrolled
+            ? '0.9rem 1.7rem'
+            : '1.2rem 1.7rem',
+          duration: 0.25,
+          ease: 'power2.out',
+          overwrite: true
         });
-      }
-    });
+      }, { passive: true });
+    }
   }
 
-  /* -----------------------------
-     PERFORMANCE & CLEANUP
-  --------------------------------*/
+  /* ----------------------------------------------------------
+     PERFORMANCE & SAFETY
+  ---------------------------------------------------------- */
   function initPerformance() {
-    // Throttle heavy operations
-    let scrollTimeout;
-    window.addEventListener('scroll', () => {
-      if (!scrollTimeout) {
-        scrollTimeout = setTimeout(() => {
-          scrollTimeout = null;
-        }, 16);
-      }
-    });
-
-    // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
+      ScrollTrigger.getAll().forEach(t => t.kill());
       if (lenis) lenis.destroy();
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     });
 
-    // Handle page visibility changes
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        // Pause heavy animations
         gsap.globalTimeline.pause();
       } else {
         gsap.globalTimeline.resume();
+        AudioCtx.resume();
       }
+    });
+
+    window.addEventListener('error', (e) => {
+      console.error('[BlakeReel] Runtime error:', e.message || e.error || e);
     });
   }
 
-  /* -----------------------------
-     FINAL INITIALIZATION
-  --------------------------------*/
-  
-  // Start everything
-  start();
-  
-  // Initialize interactions
-  initAdvancedInteractions();
+  /* ----------------------------------------------------------
+     ADAPTIVE VARIANT HOOK
+  ---------------------------------------------------------- */
+  (function applyVariant() {
+    if (CONFIG.VARIANT === 'lite') {
+      document.documentElement.classList.add('blake-lite');
+    } else {
+      document.documentElement.classList.remove('blake-lite');
+    }
+  })();
+
+  /* ----------------------------------------------------------
+     RUN
+  ---------------------------------------------------------- */
+  await start();
+  initInteractions();
   initPerformance();
 
-  // Global error handling
-  window.addEventListener('error', (e) => {
-    console.error('Cinematic experience error:', e.error);
-  });
-
-  console.log('🎬 Blake Cinematic Experience 2025 - Initialized');
+  console.log('🎬 Blake — Ultra Cinematic Scroll Film Initialized');
 });
