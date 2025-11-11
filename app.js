@@ -2,7 +2,7 @@
    BLAKE — CINEMATIC MASTERPIECE 2025
    Ultra-Orchestrated Scroll Film
    Every beat connected. No gaps. No dead frames.
-   ============================================================ */
+============================================================ */
 
 document.addEventListener('DOMContentLoaded', async () => {
   /* ----------------------------------------------------------
@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   gsap.registerPlugin(ST);
+  const ScrollTrigger = ST;
 
   const main = document.querySelector('main');
   if (!main) {
@@ -33,28 +34,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ----------------------------------------------------------
-     CONFIG — NO MAGIC NUMBERS
+     CONFIG — GRID, NOT MAGIC NUMBERS
   ---------------------------------------------------------- */
   const vw = () => Math.max(window.innerWidth, 1);
   const vh = () => Math.max(window.innerHeight, 1);
 
   const CONFIG = {
     PIXEL_RATIO: Math.min(window.devicePixelRatio || 1, 2),
-    VARIANT: vw() >= 1280 ? 'full' : 'lite',        // full experience vs tuned-down
-    BPM: 96,                                        // global musical grid
+    VARIANT: vw() >= 1280 ? 'full' : 'lite',
+    BPM: 96,
     BEATS_PER_BAR: 4,
     TIME_SCALE: 1,
-    OVERLAP_BEATS: 1.5,                             // how much scenes overlap
-    MASTER_SCROLL_DENSITY: 0.92,                    // scroll px per sec factor
+    OVERLAP_BEATS: 1.4,
+    MASTER_SCROLL_DENSITY: 0.95,
     MASTER_GAIN: 0.09,
     MATERIAL: {
-      chrome: { glint: 0.30 },
+      chrome: { glint: 0.3 },
       glass:  { glint: 0.24 },
       fabric: { shear: 0.18 }
     }
   };
 
-  const BEAT = 60 / CONFIG.BPM;                     // seconds per beat
+  const BEAT = 60 / CONFIG.BPM;
   const BAR  = BEAT * CONFIG.BEATS_PER_BAR;
 
   /* ----------------------------------------------------------
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const rand = (min, max) => min + Math.random() * (max - min);
 
   /* ----------------------------------------------------------
-     LENIS + SCROLLER PROXY (SMOOTH + PIN-SAFE)
+     LENIS + SCROLLER PROXY
   ---------------------------------------------------------- */
   let lenis = null;
 
@@ -118,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   })();
 
   /* ----------------------------------------------------------
-     AUDIO ENGINE — SINGLE CONTEXT, BPM-LOCKED, MATERIAL TONES
+     AUDIO ENGINE — SINGLE CONTEXT
   ---------------------------------------------------------- */
   const AudioCtx = {
     ctx: null,
@@ -175,16 +176,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       g.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
       osc.stop(t0 + dur);
     },
-    chromePing() { this.note(1400, 0.12, CONFIG.MASTER_GAIN * 1.1, 'sine'); },
-    fabricSoft() { this.note(520, 0.18, CONFIG.MASTER_GAIN * 0.9, 'sine'); },
-    glassTick() { this.note(980, 0.14, CONFIG.MASTER_GAIN, 'triangle'); },
-    lowPulse()  { this.note(120, 0.25, CONFIG.MASTER_GAIN * 0.6, 'sine'); }
+    chromePing() { this.note(1400, 0.16, CONFIG.MASTER_GAIN * 1.1, 'sine'); },
+    fabricSoft() { this.note(520, 0.22, CONFIG.MASTER_GAIN * 0.9, 'sine'); },
+    glassTick()  { this.note(980, 0.16, CONFIG.MASTER_GAIN, 'triangle'); },
+    lowPulse()   { this.note(120, 0.32, CONFIG.MASTER_GAIN * 0.6, 'sine'); },
+    softWhoosh() { this.note(260, 0.26, CONFIG.MASTER_GAIN * 0.4, 'sine'); }
   };
 
   Audio.unlockOnce();
 
   /* ----------------------------------------------------------
-     PROGRAMMATIC LIGHT — TRAVELING KEY LIGHT
+     PROGRAMMATIC LIGHT
   ---------------------------------------------------------- */
   const Light = (() => {
     const layer = document.createElement('div');
@@ -201,22 +203,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.appendChild(layer);
 
     function apply(p, sceneMood) {
-      // p in [0,1]
       const warm = sceneMood === 'fabric';
       const cool = sceneMood === 'glass';
       const chrome = sceneMood === 'chrome';
 
-      const baseWarm = warm ? 0.18 : chrome ? 0.13 : 0.08;
-      const baseCool = cool ? 0.17 : chrome ? 0.11 : 0.07;
+      const baseWarm = warm ? 0.2 : chrome ? 0.14 : 0.08;
+      const baseCool = cool ? 0.2 : chrome ? 0.12 : 0.07;
 
-      const x1 = map(p, 0, 1, 8, 78);
-      const y1 = map(Math.sin(p * Math.PI), -1, 1, 40, 60);
-      const x2 = map(1 - p, 0, 1, 88, 18);
-      const y2 = map(Math.cos(p * Math.PI), -1, 1, 32, 68);
+      const x1 = map(p, 0, 1, 10, 80);
+      const y1 = map(Math.sin(p * Math.PI), -1, 1, 35, 65);
+      const x2 = map(1 - p, 0, 1, 85, 20);
+      const y2 = map(Math.cos(p * Math.PI), -1, 1, 30, 70);
 
-      const o = 0.45;
-
-      layer.style.opacity = o;
+      layer.style.opacity = 0.5;
       layer.style.backgroundImage = `
         radial-gradient(120vmax 80vmax at ${x1}% ${y1}%,
           rgba(255,245,210,${baseWarm}) 0%,
@@ -235,7 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   })();
 
   /* ----------------------------------------------------------
-     PARALLAX MANAGER — DRIVEN BY REEL PROGRESS + VELOCITY
+     PARALLAX MANAGER
   ---------------------------------------------------------- */
   const Parallax = (() => {
     const layers = [];
@@ -249,10 +248,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       update(progress) {
         const delta = progress - lastProgress;
         lastProgress = progress;
-        const velocity = clamp(delta * 40, -2, 2); // tuned
+        const velocity = clamp(delta * 40, -2, 2);
 
         layers.forEach(({ el, depth }) => {
-          const offset = velocity * depth * 18; // px
+          const offset = velocity * depth * 20;
           gsap.to(el, {
             y: offset,
             duration: 0.35,
@@ -265,7 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   })();
 
   /* ----------------------------------------------------------
-     MOTIFS — GLINTS / SHEENS / SHEAR (REUSABLE)
+     MOTIFS
   ---------------------------------------------------------- */
   const Motif = {
     glint(el, strength = 0.28, dur = BEAT * 1.1) {
@@ -280,25 +279,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         background: linear-gradient(
           100deg,
           transparent 0%,
-          rgba(255,255,255,${strength}) 45%,
-          transparent 70%
+          rgba(255,255,255,${strength}) 40%,
+          transparent 72%
         );
-        transform: translateX(-130%);
+        transform: translateX(-140%);
       `;
       if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
       el.appendChild(g);
 
       const tl = gsap.timeline();
       tl.to(g, {
+        x: '240%',
         opacity: 1,
-        xPercent: 240,
         duration: dur,
         ease: 'power3.inOut'
       }).to(g, {
         opacity: 0,
         duration: dur * 0.35,
         ease: 'power1.out'
-      }, '-=0.22')
+      }, '-=0.2')
       .add(() => g.remove());
       return tl;
     },
@@ -317,8 +316,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           conic-gradient(
             from 0deg,
             transparent 0deg,
-            rgba(255,255,255,${strength}) 10deg,
-            transparent 26deg
+            rgba(255,255,255,${strength}) 12deg,
+            transparent 30deg
           );
       `;
       if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
@@ -344,7 +343,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const tl = gsap.timeline();
       tl.fromTo(el,
         { skewY: 0.0001 },
-        { skewY: 3.6, duration: dur * 0.4, ease: 'power2.in' }
+        { skewY: 3.4, duration: dur * 0.4, ease: 'power2.in' }
       ).to(el, {
         skewY: 0,
         duration: dur * 0.6,
@@ -355,7 +354,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   /* ----------------------------------------------------------
-     SVG MASK UTIL — FOR WIPES
+     SVG CLIP UTIL (for selective wipes)
   ---------------------------------------------------------- */
   function ensureMask(id) {
     let svg = document.getElementById('blake-masks');
@@ -383,10 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       svg.appendChild(mask);
     }
 
-    return {
-      id: maskId,
-      rect: mask.firstChild
-    };
+    return { id: maskId, rect: mask.firstChild };
   }
 
   /* ----------------------------------------------------------
@@ -413,7 +409,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ----------------------------------------------------------
-     SCENES — EACH FULLY COMPOSED, NO DEAD AIR
+     SCENES — ALL OF THEM
   ---------------------------------------------------------- */
 
   // HERO
@@ -426,62 +422,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const tl = gsap.timeline();
 
-    tl.fromTo(sec, { opacity: 0 }, { opacity: 1, duration: BEAT * 0.5, ease: 'power2.out' }, 0);
+    tl.fromTo(sec, { opacity: 0 }, { opacity: 1, duration: BEAT * 0.6 }, 0);
 
     if (h1) {
       tl.fromTo(h1,
         {
-          y: vh() * 0.14,
+          y: vh() * 0.16,
           opacity: 0,
           rotationX: 78,
-          filter: 'blur(20px) brightness(1.8)',
-          transformOrigin: '50% 0%'
+          filter: 'blur(20px) brightness(1.9)'
         },
         {
           y: 0,
           opacity: 1,
           rotationX: 0,
-          filter: 'blur(0px) brightness(1)',
-          duration: BAR * 0.9,
-          ease: 'power4.out'
+          filter: 'blur(0) brightness(1)',
+          duration: BAR * 0.9
         },
-        BEAT * 0.5
+        BEAT * 0.4
       );
-      tl.add(Motif.glint(h1, CONFIG.MATERIAL.chrome.glint, BEAT * 1.3), BEAT * 1.2);
+      tl.add(Motif.glint(h1, CONFIG.MATERIAL.chrome.glint, BEAT * 1.2), BEAT * 1.1);
     }
 
     if (p) {
       tl.fromTo(p,
-        {
-          y: vh() * 0.06,
-          opacity: 0,
-          filter: 'blur(12px)'
-        },
+        { y: vh() * 0.06, opacity: 0, filter: 'blur(14px)' },
         {
           y: 0,
           opacity: 1,
-          filter: 'blur(0px)',
+          filter: 'blur(0)',
           duration: BEAT * 2,
           ease: 'power3.out'
         },
-        BEAT * 1.3
+        BEAT * 1.0
       );
     }
 
     if (line) {
       tl.fromTo(line,
-        {
-          scaleX: 0,
-          transformOrigin: '0% 50%',
-          opacity: 0
-        },
-        {
-          scaleX: 1,
-          opacity: 1,
-          duration: BEAT * 1.4,
-          ease: 'power3.out'
-        },
-        BEAT * 1.6
+        { scaleX: 0, opacity: 0, transformOrigin: '0% 50%' },
+        { scaleX: 1, opacity: 1, duration: BEAT * 1.2 },
+        BEAT * 1.4
       );
     }
 
@@ -490,11 +471,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       Audio.lowPulse();
     }, BEAT * 1.5);
 
-    Parallax.add(sec, 0.35);
+    Parallax.add(sec, 0.32);
     return tl;
   }
 
-  // S63 — CHROME / SPEED / GLINT CHOREOGRAPHY
+  // S63
   function s63Scene() {
     const sec = $('section[data-scene="s63"]');
     if (!sec) return gsap.timeline();
@@ -506,53 +487,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (frames.length) {
       tl.set(frames, {
         opacity: 0,
-        scale: 1.08,
+        scale: 1.06,
         rotationY: -22,
-        transformPerspective: 900,
-        transformOrigin: '50% 50%'
+        transformPerspective: 900
       });
 
-      // frame 1 in
+      // frame 1
       tl.to(frames[0], {
         opacity: 1,
         rotationY: 0,
         scale: 1,
-        duration: BEAT * 1.4,
-        ease: 'power3.out'
+        duration: BEAT * 1.4
       }, 0);
-
       tl.add(Motif.glint(frames[0], CONFIG.MATERIAL.chrome.glint, BEAT * 0.9), BEAT * 0.4);
 
-      // frame 1 -> frame 2
-      const f1 = frames[0];
       const f2 = frames[1] || frames[0];
-      tl.to(f1, {
+      const f3 = frames[2] || f2;
+
+      // frame 1 -> 2
+      tl.to(frames[0], {
         opacity: 0,
         rotationY: 18,
-        scale: 1.04,
-        duration: BEAT * 1.0,
-        ease: 'power2.inOut'
+        scale: 1.03,
+        duration: BEAT * 1.0
       }, BEAT * 1.4);
 
       tl.to(f2, {
         opacity: 1,
         rotationY: 0,
-        y: 0,
-        duration: BEAT * 1.0,
-        ease: 'power2.out'
+        duration: BEAT * 1.0
       }, BEAT * 1.4);
 
       tl.add(Motif.glint(f2, CONFIG.MATERIAL.chrome.glint, BEAT * 0.8), BEAT * 2.0);
 
-      // frame 2 -> frame 3
-      const f3 = frames[2] || f2;
+      // frame 2 -> 3
       tl.to(f2, {
         opacity: 0,
         y: -vh() * 0.03,
-        scale: 0.96,
+        scale: 0.97,
         rotationY: -10,
-        duration: BEAT * 1.2,
-        ease: 'power3.inOut'
+        duration: BEAT * 1.2
       }, BEAT * 2.6);
 
       tl.to(f3, {
@@ -560,8 +534,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         y: 0,
         scale: 1,
         rotationY: 0,
-        duration: BEAT * 1.3,
-        ease: 'power4.out'
+        duration: BEAT * 1.3
       }, BEAT * 2.6);
 
       tl.add(Motif.glint(f3, CONFIG.MATERIAL.chrome.glint, BEAT * 1.0), BEAT * 3.3);
@@ -569,32 +542,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (chips.length) {
       tl.from(chips, {
-        y: 26,
+        y: 24,
         opacity: 0,
-        rotationX: 48,
+        rotationX: 40,
         transformOrigin: '50% 0%',
-        stagger: {
-          each: BEAT * 0.12,
-          from: 'center'
-        },
-        duration: BEAT * 0.8,
-        ease: 'back.out(1.7)'
+        stagger: { each: BEAT * 0.12, from: 'center' },
+        duration: BEAT * 0.9
       }, BEAT * 1.8);
     }
 
-    tl.add(() => {
-      Audio.chromePing();
-    }, BEAT * 0.8);
-
+    tl.add(() => Audio.chromePing(), BEAT * 0.8);
     Parallax.add(sec, 0.55);
     return tl;
   }
 
-  // DRIVERS — SOFT FABRIC + SAND
+  // DRIVERS
   function driversScene() {
     const sec = $('section[data-scene="drivers"]');
     if (!sec) return gsap.timeline();
     const img = $('img', sec);
+    const blurb = $('.blurb', sec);
     if (!img) return gsap.timeline();
 
     const tl = gsap.timeline();
@@ -604,34 +571,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         scale: 1.16,
         y: vh() * 0.12,
         rotation: -4,
-        filter: 'contrast(1.25) saturate(1.18) blur(8px) brightness(0.86)',
-        transformOrigin: '50% 100%'
+        filter: 'contrast(1.2) saturate(1.15) blur(8px) brightness(0.84)'
       },
       {
         scale: 1,
         y: 0,
         rotation: 0,
-        filter: 'contrast(1) saturate(1) blur(0px) brightness(1)',
-        duration: BAR * 0.9,
-        ease: 'power4.out'
+        filter: 'contrast(1) saturate(1) blur(0) brightness(1)',
+        duration: BAR * 0.9
       },
       0
     );
 
-    tl.add(Motif.fabricShear(img, BEAT), BEAT * 0.6);
-    tl.add(() => Audio.fabricSoft(), BEAT * 0.7);
+    if (blurb) {
+      tl.fromTo(blurb,
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: BEAT * 0.8 },
+        BEAT * 0.9
+      );
+    }
+
+    tl.add(Motif.fabricShear(img, BEAT), BEAT * 0.5);
+    tl.add(() => Audio.fabricSoft(), BEAT * 0.6);
 
     Parallax.add(sec, 0.4);
     return tl;
   }
 
-  // HOODIE — CASHMERE UNFOLD
+  // HOODIE
   function hoodieScene() {
     const sec = $('section[data-scene="hoodie"]');
     if (!sec) return gsap.timeline();
     const img = $('img', sec);
+    const blurb = $('.blurb', sec);
     if (!img) return gsap.timeline();
-
     const tl = gsap.timeline();
 
     tl.fromTo(img,
@@ -646,11 +619,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         scale: 1,
         rotation: 0,
         filter: 'brightness(1) contrast(1)',
-        duration: BAR * 0.75,
-        ease: 'power3.out'
+        duration: BAR * 0.75
       },
       0
     );
+
+    if (blurb) {
+      tl.fromTo(blurb,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: BEAT * 0.9 },
+        BEAT * 0.6
+      );
+    }
 
     tl.add(Motif.fabricShear(img, BEAT * 0.9), BEAT * 0.35);
     tl.add(() => Audio.fabricSoft(), BEAT * 0.4);
@@ -659,7 +639,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return tl;
   }
 
-  // WATCH — MECHANICAL PRECISION
+  // WATCH
   function watchScene() {
     const sec = $('section[data-scene="watch"]');
     if (!sec) return gsap.timeline();
@@ -668,23 +648,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const tl = gsap.timeline();
 
-    tl.fromTo(img,
-      {
-        scale: 1.08,
-        opacity: 0,
-        rotationY: -16,
-        filter: 'blur(5px)'
-      },
-      {
-        scale: 1,
-        opacity: 1,
-        rotationY: 0,
-        filter: 'blur(0px)',
-        duration: BEAT * 1.2,
-        ease: 'power3.out'
-      },
-      0
-    );
+    if (img) {
+      tl.fromTo(img,
+        {
+          scale: 1.08,
+          opacity: 0,
+          rotationY: -16,
+          filter: 'blur(5px)'
+        },
+        {
+          scale: 1,
+          opacity: 1,
+          rotationY: 0,
+          filter: 'blur(0)',
+          duration: BEAT * 1.2
+        },
+        0
+      );
+    }
 
     if (date) {
       tl.fromTo(date,
@@ -717,7 +698,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return tl;
   }
 
-  // LINEN — COLOR FIELD FLOW
+  // LINEN
   function linenScene() {
     const sec = $('section[data-scene="linen"]');
     if (!sec) return gsap.timeline();
@@ -730,17 +711,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       xPercent: (i) => (i - Math.floor(imgs.length / 2)) * 105,
       opacity: 0,
       rotationY: 34,
-      stagger: {
-        each: BEAT * 0.16,
-        from: 'center'
-      },
-      duration: BEAT * 0.9,
-      ease: 'power3.out'
+      stagger: { each: BEAT * 0.16, from: 'center' },
+      duration: BEAT * 0.9
     }, 0);
 
     tl.to(imgs, {
       xPercent: -100 * (imgs.length - 1),
-      duration: BAR * 2.1,
+      duration: BAR * 2.0,
       ease: 'none',
       modifiers: {
         xPercent: gsap.utils.wrap(-100, 400)
@@ -748,12 +725,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, BEAT * 0.7);
 
     tl.add(() => Audio.fabricSoft(), BEAT * 0.5);
-
     Parallax.add(sec, 0.32);
     return tl;
   }
 
-  // CLUBMASTER — GLASS & GOLD
+  // CLUBMASTER
   function clubmasterScene() {
     const sec = $('section[data-scene="clubmaster"]');
     if (!sec) return gsap.timeline();
@@ -762,22 +738,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const tl = gsap.timeline();
 
-    tl.fromTo(frame,
-      {
-        y: 26,
-        opacity: 0,
-        rotationX: 34,
-        transformOrigin: '50% 50%'
-      },
-      {
-        y: 0,
-        opacity: 1,
-        rotationX: 0,
-        duration: BEAT * 1.2,
-        ease: 'power4.out'
-      },
-      0
-    );
+    if (frame) {
+      tl.fromTo(frame,
+        {
+          y: 26,
+          opacity: 0,
+          rotationX: 34,
+          transformOrigin: '50% 50%'
+        },
+        {
+          y: 0,
+          opacity: 1,
+          rotationX: 0,
+          duration: BEAT * 1.2
+        },
+        0
+      );
+    }
 
     if (lens) {
       tl.fromTo(lens,
@@ -790,17 +767,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           opacity: 0.65,
           scale: 1,
           backgroundPosition: '230% 0',
-          duration: BEAT * 1.6,
-          ease: 'power2.inOut'
+          duration: BEAT * 1.6
         },
         BEAT * 0.25
       );
     }
 
-    // interactive tilt with inertia-like feel
     if (frame) {
-      const setRX = gsap.quickSetter(frame, 'rotationX', 'deg');
-      const setRY = gsap.quickSetter(frame, 'rotationY', 'deg');
       frame.addEventListener('mousemove', (e) => {
         const r = frame.getBoundingClientRect();
         if (!r.width || !r.height) return;
@@ -835,28 +808,758 @@ document.addEventListener('DOMContentLoaded', async () => {
     return tl;
   }
 
-  // CHROME TO GLASS WIPE (S63 -> WATCH)
+  // HEROD — vapor + bottle glow
+  function herodScene() {
+    const sec = $('section[data-scene="herod"]');
+    if (!sec) return gsap.timeline();
+    const bottle = $('.bottle img', sec);
+    const vapor = $('.vapor', sec);
+    const blurb = $('.blurb', sec);
+
+    const tl = gsap.timeline();
+
+    if (bottle) {
+      tl.fromTo(bottle,
+        {
+          y: 40,
+          opacity: 0,
+          scale: 0.96,
+          filter: 'blur(4px) saturate(0.9)'
+        },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          filter: 'blur(0) saturate(1)',
+          duration: BEAT * 1.1
+        },
+        0
+      );
+      tl.add(Motif.glint(bottle, 0.22, BEAT * 0.9), BEAT * 0.4);
+    }
+
+    if (vapor) {
+      tl.fromTo(vapor,
+        { opacity: 0 },
+        { opacity: 0.55, duration: BEAT * 1.6, ease: 'power1.out' },
+        BEAT * 0.3
+      ).to(vapor,
+        { opacity: 0.2, duration: BEAT * 2.0, ease: 'power1.inOut' },
+        BEAT * 1.8
+      );
+    }
+
+    if (blurb) {
+      tl.fromTo(blurb,
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: BEAT * 0.9 },
+        BEAT * 0.9
+      );
+    }
+
+    tl.add(() => Audio.softWhoosh(), BEAT * 0.6);
+    Parallax.add(sec, 0.28);
+    return tl;
+  }
+
+  // CREAM BLAZER — blueprint stitch
+  function creamBlazerScene() {
+    const sec = $('section[data-scene="creamBlazer"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const stitch = $('.stitch path', sec);
+
+    const tl = gsap.timeline();
+
+    if (img) {
+      tl.fromTo(img,
+        { opacity: 0, y: 30, scale: 1.02 },
+        { opacity: 1, y: 0, scale: 1, duration: BEAT * 1.0 },
+        0
+      );
+      tl.add(Motif.fabricShear(img, BEAT * 0.8), BEAT * 0.4);
+    }
+
+    if (stitch) {
+      const len = stitch.getTotalLength ? stitch.getTotalLength() : 1200;
+      tl.set(stitch, {
+        strokeDasharray: len,
+        strokeDashoffset: len,
+        stroke: 'rgba(255,255,255,0.7)',
+        fill: 'transparent'
+      }, 0);
+      tl.to(stitch, {
+        strokeDashoffset: 0,
+        duration: BEAT * 1.4,
+        ease: 'power2.out'
+      }, BEAT * 0.3);
+    }
+
+    Parallax.add(sec, 0.34);
+    return tl;
+  }
+
+  // GG — sneaker pedestal
+  function ggScene() {
+    const sec = $('section[data-scene="gg"]');
+    if (!sec) return gsap.timeline();
+    const shoe = $('.gg-shoe', sec);
+    const pedestal = $('.gallery-pedestal', sec);
+
+    const tl = gsap.timeline();
+
+    if (shoe) {
+      tl.fromTo(shoe,
+        {
+          y: 40,
+          opacity: 0,
+          rotation: -6,
+          scale: 0.96
+        },
+        {
+          y: 0,
+          opacity: 1,
+          rotation: 0,
+          scale: 1,
+          duration: BEAT * 1.1
+        },
+        0
+      );
+      tl.add(Motif.glint(shoe, 0.26, BEAT), BEAT * 0.5);
+    }
+
+    if (pedestal) {
+      tl.fromTo(pedestal,
+        { opacity: 0, scaleX: 0.7 },
+        { opacity: 1, scaleX: 1, duration: BEAT * 0.8 },
+        BEAT * 0.3
+      );
+    }
+
+    Parallax.add(sec, 0.35);
+    return tl;
+  }
+
+  // JOGGERS
+  function joggersScene() {
+    const sec = $('section[data-scene="joggers"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const tl = gsap.timeline();
+    if (!img) return tl;
+
+    tl.fromTo(img,
+      { opacity: 0, y: 40, scale: 1.04 },
+      { opacity: 1, y: 0, scale: 1, duration: BEAT * 1.0 },
+      0
+    );
+    tl.add(Motif.fabricShear(img, BEAT * 0.7), BEAT * 0.4);
+
+    Parallax.add(sec, 0.3);
+    return tl;
+  }
+
+  // CARDIGANS
+  function cardigansScene() {
+    const sec = $('section[data-scene="cardigans"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('.zip-gallery img', sec);
+    const tl = gsap.timeline();
+    if (!imgs.length) return tl;
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 32,
+      stagger: { each: BEAT * 0.14, from: 'center' },
+      duration: BEAT * 0.9
+    }, 0);
+
+    tl.add(() => Audio.fabricSoft(), BEAT * 0.4);
+    Parallax.add(sec, 0.32);
+    return tl;
+  }
+
+  // BLAZERS
+  function blazersScene() {
+    const sec = $('section[data-scene="blazers"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('.mannequins img', sec);
+    const tl = gsap.timeline();
+    if (!imgs.length) return tl;
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 40,
+      rotationY: -18,
+      transformOrigin: '50% 100%',
+      stagger: { each: BEAT * 0.12, from: 'center' },
+      duration: BEAT * 0.9
+    }, 0);
+
+    tl.add(Motif.glint(sec, 0.18, BEAT * 1.0), BEAT * 0.6);
+    Parallax.add(sec, 0.45);
+    return tl;
+  }
+
+  // V-NECKS
+  function vnecksScene() {
+    const sec = $('section[data-scene="vnecks"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('.vneck-row img', sec);
+    const tl = gsap.timeline();
+    if (!imgs.length) return tl;
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 26,
+      stagger: { each: BEAT * 0.12, from: 'center' },
+      duration: BEAT * 0.8
+    }, 0);
+    tl.add(() => Audio.fabricSoft(), BEAT * 0.3);
+    Parallax.add(sec, 0.25);
+    return tl;
+  }
+
+  // VELVET
+  function velvetScene() {
+    const sec = $('section[data-scene="velvet"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const tl = gsap.timeline();
+    if (!img) return tl;
+
+    tl.fromTo(img,
+      { opacity: 0, scale: 1.06, filter: 'brightness(0.7)' },
+      { opacity: 1, scale: 1, filter: 'brightness(1)', duration: BEAT * 1.0 },
+      0
+    );
+    tl.add(Motif.glint(img, 0.22, BEAT * 0.8), BEAT * 0.5);
+    Parallax.add(sec, 0.3);
+    return tl;
+  }
+
+  // CHAINS
+  function chainsScene() {
+    const sec = $('section[data-scene="chains"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('.chains-row img', sec);
+    const tl = gsap.timeline();
+    if (!imgs.length) return tl;
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 30,
+      stagger: { each: BEAT * 0.1, from: 'center' },
+      duration: BEAT * 0.8
+    }, 0);
+    tl.add(Motif.glint(sec, CONFIG.MATERIAL.chrome.glint, BEAT * 0.9), BEAT * 0.4);
+    Parallax.add(sec, 0.35);
+    return tl;
+  }
+
+  // SUITS BLUEPRINT
+  function suitsScene() {
+    const sec = $('section[data-scene="suits"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const tl = gsap.timeline();
+    if (!img) return tl;
+
+    tl.fromTo(img,
+      { opacity: 0, scale: 1.04, filter: 'blur(4px)' },
+      { opacity: 1, scale: 1, filter: 'blur(0)', duration: BEAT * 1.0 },
+      0
+    );
+    Parallax.add(sec, 0.32);
+    return tl;
+  }
+
+  // PURPLE VELVET
+  function purpleScene() {
+    const sec = $('section[data-scene="purple"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const tl = gsap.timeline();
+    if (!img) return tl;
+
+    tl.fromTo(img,
+      { opacity: 0, y: 40, scale: 1.05 },
+      { opacity: 1, y: 0, scale: 1, duration: BEAT * 1.0 },
+      0
+    );
+    tl.add(Motif.glint(img, 0.24, BEAT * 0.9), BEAT * 0.4);
+    Parallax.add(sec, 0.32);
+    return tl;
+  }
+
+  // CHINOS + SCARF
+  function chinosScene() {
+    const sec = $('section[data-scene="chinos"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('img', sec);
+    const tl = gsap.timeline();
+    if (!imgs.length) return tl;
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 32,
+      stagger: { each: BEAT * 0.12 },
+      duration: BEAT * 0.9
+    }, 0);
+    tl.add(() => Audio.fabricSoft(), BEAT * 0.4);
+    Parallax.add(sec, 0.28);
+    return tl;
+  }
+
+  // GAMES
+  function gamesScene() {
+    const sec = $('section[data-scene="games"]');
+    if (!sec) return gsap.timeline();
+    const covers = $$('.covers img', sec);
+    const tl = gsap.timeline();
+    if (!covers.length) return tl;
+
+    tl.from(covers, {
+      opacity: 0,
+      y: 40,
+      rotation: -4,
+      stagger: { each: BEAT * 0.1 },
+      duration: BEAT * 0.9
+    }, 0);
+
+    Parallax.add(sec, 0.25);
+    return tl;
+  }
+
+  // ULTIMA
+  function ultimaScene() {
+    const sec = $('section[data-scene="ultima"]');
+    if (!sec) return gsap.timeline();
+    const photo = $('.ultima-photo', sec);
+    const rail = $('.year-rail', sec);
+    const blurb = $('.blurb', sec);
+
+    const tl = gsap.timeline();
+
+    if (photo) {
+      tl.fromTo(photo,
+        { opacity: 0, y: 40, scale: 1.03 },
+        { opacity: 1, y: 0, scale: 1, duration: BEAT * 1.0 },
+        0
+      );
+      tl.add(Motif.glint(photo, CONFIG.MATERIAL.chrome.glint, BEAT * 1.0), BEAT * 0.6);
+    }
+
+    if (rail) {
+      const spans = $$('span', rail);
+      tl.fromTo(rail,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: BEAT * 0.6 },
+        BEAT * 0.4
+      );
+      tl.from(spans, {
+        opacity: 0.2,
+        color: 'rgba(255,255,255,0.3)',
+        stagger: { each: BEAT * 0.12 },
+        duration: BEAT * 0.4
+      }, BEAT * 0.7);
+    }
+
+    if (blurb) {
+      tl.fromTo(blurb,
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: BEAT * 0.8 },
+        BEAT * 0.9
+      );
+    }
+
+    Parallax.add(sec, 0.4);
+    return tl;
+  }
+
+  // EXOTICS
+  function exoticsScene() {
+    const sec = $('section[data-scene="exotics"]');
+    if (!sec) return gsap.timeline();
+    const ribbon = $('.speed-ribbon', sec);
+    const cars = $$('.fleet img', sec);
+    const tl = gsap.timeline();
+
+    if (ribbon) {
+      tl.fromTo(ribbon,
+        { opacity: 0, scaleX: 0.4, xPercent: -40 },
+        { opacity: 1, scaleX: 1, xPercent: 0, duration: BEAT * 0.9 },
+        0
+      );
+    }
+
+    if (cars.length) {
+      tl.from(cars, {
+        opacity: 0,
+        y: 40,
+        stagger: { each: BEAT * 0.12 },
+        duration: BEAT * 0.8
+      }, BEAT * 0.2);
+    }
+
+    tl.add(() => Audio.softWhoosh(), BEAT * 0.3);
+    Parallax.add(sec, 0.45);
+    return tl;
+  }
+
+  // DESK
+  function deskScene() {
+    const sec = $('section[data-scene="desk"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('img', sec);
+    const tl = gsap.timeline();
+    if (!imgs.length) return tl;
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 26,
+      stagger: { each: BEAT * 0.1 },
+      duration: BEAT * 0.8
+    }, 0);
+
+    Parallax.add(sec, 0.3);
+    return tl;
+  }
+
+  // DUBAI
+  function dubaiScene() {
+    const sec = $('section[data-scene="dubai"]');
+    if (!sec) return gsap.timeline();
+    const haze = $('.heat-haze', sec);
+    const img = $('img', sec);
+    const blurb = $('.blurb', sec);
+    const tl = gsap.timeline();
+
+    if (img) {
+      tl.fromTo(img,
+        { opacity: 0, scale: 1.06, y: 30 },
+        { opacity: 1, scale: 1, y: 0, duration: BEAT * 1.0 },
+        0
+      );
+    }
+    if (haze) {
+      tl.fromTo(haze,
+        { opacity: 0 },
+        { opacity: 0.45, duration: BEAT * 1.2 },
+        BEAT * 0.3
+      );
+    }
+    if (blurb) {
+      tl.fromTo(blurb,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: BEAT * 0.7 },
+        BEAT * 0.7
+      );
+    }
+
+    Parallax.add(sec, 0.35);
+    return tl;
+  }
+
+  // SWEATERS / BAG / PEN
+  function sweatersBagPenScene() {
+    const sec = $('section[data-scene="sweatersbagpen"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('img', sec);
+    const tl = gsap.timeline();
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 24,
+      stagger: { each: BEAT * 0.1 },
+      duration: BEAT * 0.8
+    }, 0);
+
+    tl.add(() => Audio.fabricSoft(), BEAT * 0.4);
+    Parallax.add(sec, 0.3);
+    return tl;
+  }
+
+  // FRAGRANCES CONSTELLATION
+  function fragsScene() {
+    const sec = $('section[data-scene="frags"]');
+    if (!sec) return gsap.timeline();
+    const canvas = $('.constellation', sec);
+    const imgs = $$('.frag-grid img', sec);
+    const tl = gsap.timeline();
+
+    if (canvas) {
+      tl.fromTo(canvas,
+        { opacity: 0 },
+        { opacity: 0.6, duration: BEAT * 1.0 },
+        0
+      );
+    }
+
+    if (imgs.length) {
+      tl.from(imgs, {
+        opacity: 0,
+        y: 24,
+        stagger: { each: BEAT * 0.1, from: 'center' },
+        duration: BEAT * 0.8
+      }, BEAT * 0.2);
+    }
+
+    Parallax.add(sec, 0.28);
+    return tl;
+  }
+
+  // UNDERGLOW
+  function underglowScene() {
+    const sec = $('section[data-scene="underglow"]');
+    if (!sec) return gsap.timeline();
+    const road = $('.road', sec);
+    const img = $('img', sec);
+    const tl = gsap.timeline();
+
+    if (road) {
+      tl.fromTo(road,
+        { opacity: 0, scaleX: 0.5 },
+        { opacity: 1, scaleX: 1, duration: BEAT * 0.7 },
+        0
+      );
+    }
+    if (img) {
+      tl.fromTo(img,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: BEAT * 0.8 },
+        BEAT * 0.2
+      );
+    }
+
+    Parallax.add(sec, 0.35);
+    return tl;
+  }
+
+  // DJI
+  function djiScene() {
+    const sec = $('section[data-scene="dji"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const hud = $('.hud', sec);
+    const chips = hud ? $$('span', hud) : [];
+    const tl = gsap.timeline();
+
+    if (img) {
+      tl.fromTo(img,
+        { opacity: 0, y: 26, scale: 1.04 },
+        { opacity: 1, y: 0, scale: 1, duration: BEAT * 0.9 },
+        0
+      );
+    }
+
+    if (hud) {
+      tl.fromTo(hud,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: BEAT * 0.6 },
+        BEAT * 0.3
+      );
+    }
+    if (chips.length) {
+      tl.from(chips, {
+        opacity: 0,
+        y: 8,
+        stagger: { each: BEAT * 0.1 },
+        duration: BEAT * 0.4
+      }, BEAT * 0.4);
+    }
+
+    Parallax.add(sec, 0.32);
+    return tl;
+  }
+
+  // EMBODY
+  function embodyScene() {
+    const sec = $('section[data-scene="embody"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const tl = gsap.timeline();
+    if (!img) return tl;
+
+    tl.fromTo(img,
+      { opacity: 0, y: 40, scale: 1.02 },
+      { opacity: 1, y: 0, scale: 1, duration: BEAT * 0.9 },
+      0
+    );
+    Parallax.add(sec, 0.28);
+    return tl;
+  }
+
+  // POLO / TROUSERS
+  function poloTrousersScene() {
+    const sec = $('section[data-scene="poloTrousers"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('img', sec);
+    const tl = gsap.timeline();
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 26,
+      stagger: { each: BEAT * 0.1 },
+      duration: BEAT * 0.8
+    }, 0);
+
+    Parallax.add(sec, 0.26);
+    return tl;
+  }
+
+  // FINGEARS
+  function fingearsScene() {
+    const sec = $('section[data-scene="fingears"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const tl = gsap.timeline();
+    if (!img) return tl;
+
+    tl.fromTo(img,
+      { opacity: 0, scale: 0.9, rotation: -8 },
+      { opacity: 1, scale: 1, rotation: 0, duration: BEAT * 0.8 },
+      0
+    );
+
+    Parallax.add(sec, 0.22);
+    return tl;
+  }
+
+  // P-WATCH / COLLAR CHAIN
+  function pwatchScene() {
+    const sec = $('section[data-scene="pwatch"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('img', sec);
+    const tl = gsap.timeline();
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 26,
+      stagger: { each: BEAT * 0.1 },
+      duration: BEAT * 0.8
+    }, 0);
+    tl.add(Motif.glint(sec, 0.18, BEAT * 0.8), BEAT * 0.5);
+
+    Parallax.add(sec, 0.26);
+    return tl;
+  }
+
+  // AUDIO SOFTWARE
+  function audioSoftScene() {
+    const sec = $('section[data-scene="audioSoft"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('img', sec);
+    const tl = gsap.timeline();
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 24,
+      stagger: { each: BEAT * 0.1 },
+      duration: BEAT * 0.8
+    }, 0);
+
+    Parallax.add(sec, 0.24);
+    return tl;
+  }
+
+  // GEMINI
+  function geminiScene() {
+    const sec = $('section[data-scene="gemini"]');
+    if (!sec) return gsap.timeline();
+    const img = $('img', sec);
+    const tl = gsap.timeline();
+    if (!img) return tl;
+
+    tl.fromTo(img,
+      { opacity: 0, y: 30, scale: 1.05 },
+      { opacity: 1, y: 0, scale: 1, duration: BEAT * 0.9 },
+      0
+    );
+
+    Parallax.add(sec, 0.24);
+    return tl;
+  }
+
+  // BONSAI + HEAT PAD
+  function bonsaiScene() {
+    const sec = $('section[data-scene="bonsai"]');
+    if (!sec) return gsap.timeline();
+    const imgs = $$('img', sec);
+    const tl = gsap.timeline();
+    if (!imgs.length) return tl;
+
+    tl.from(imgs, {
+      opacity: 0,
+      y: 26,
+      stagger: { each: BEAT * 0.12 },
+      duration: BEAT * 0.8
+    }, 0);
+
+    Parallax.add(sec, 0.22);
+    return tl;
+  }
+
+  // CLOSER
+  function closerScene() {
+    const sec = $('section.closer');
+    if (!sec) return gsap.timeline();
+    const h2 = $('h2', sec);
+    const actions = $('.actions', sec);
+
+    const tl = gsap.timeline();
+
+    tl.fromTo(sec,
+      { opacity: 0 },
+      { opacity: 1, duration: BEAT * 0.8 },
+      0
+    );
+
+    if (h2) {
+      tl.fromTo(h2,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: BEAT * 0.9 },
+        BEAT * 0.2
+      );
+    }
+
+    if (actions) {
+      tl.fromTo(actions,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: BEAT * 0.8 },
+        BEAT * 0.7
+      );
+    }
+
+    tl.add(() => {
+      Audio.lowPulse();
+      Audio.fabricSoft();
+    }, BEAT * 0.7);
+
+    Parallax.add(sec, 0.18);
+    return tl;
+  }
+
+  // Optional: S63 -> WATCH wipe already defined as motif
   function carToWatchWipe() {
-    const s63  = $('section[data-scene="s63"]');
+    const s63 = $('section[data-scene="s63"]');
     const watch = $('section[data-scene="watch"]');
     if (!s63 || !watch) return gsap.timeline();
 
     const tl = gsap.timeline();
-
     const { rect, id } = ensureMask('car-watch');
     rect.setAttribute('x', '0');
     rect.setAttribute('y', '0');
     rect.setAttribute('width', '0');
     rect.setAttribute('height', String(vh() * 1.2));
 
-    s63.style.clipPath   = `url(#${id})`;
+    s63.style.clipPath = `url(#${id})`;
     watch.style.clipPath = `url(#${id})`;
 
     tl.to(rect, {
       attr: { width: vw() * 1.4 },
-      duration: BEAT * 1.2,
+      duration: BEAT * 1.1,
       ease: 'power3.inOut',
-      onUpdate: () => {},
       onComplete: () => {
         s63.style.clipPath = '';
         watch.style.clipPath = '';
@@ -872,21 +1575,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ----------------------------------------------------------
-     BUILD MASTER REEL — ALL CONNECTED, NO GAPS
+     BUILD MASTER REEL — ORDERED, OVERLAPPED
   ---------------------------------------------------------- */
-  addScene('hero',       heroScene(),          0);
-  addScene('s63',        s63Scene());
-  addScene('drivers',    driversScene());
-  addScene('hoodie',     hoodieScene());
-  addScene('watch',      watchScene());
-  addScene('linen',      linenScene());
-  addScene('clubmaster', clubmasterScene());
-  addScene('car→watch',  carToWatchWipe(),    CONFIG.OVERLAP_BEATS * 0.7);
+  addScene('hero',             heroScene(),          0);
+  addScene('s63',              s63Scene());
+  addScene('drivers',          driversScene());
+  addScene('hoodie',           hoodieScene());
+  addScene('watch',            watchScene());
+  addScene('linen',            linenScene());
+  addScene('clubmaster',       clubmasterScene());
+  addScene('herod',            herodScene());
+  addScene('creamBlazer',      creamBlazerScene());
+  addScene('gg',               ggScene());
+  addScene('joggers',          joggersScene());
+  addScene('cardigans',        cardigansScene());
+  addScene('blazers',          blazersScene());
+  addScene('vnecks',           vnecksScene());
+  addScene('velvet',           velvetScene());
+  addScene('chains',           chainsScene());
+  addScene('suits',            suitsScene());
+  addScene('purple',           purpleScene());
+  addScene('chinos',           chinosScene());
+  addScene('games',            gamesScene());
+  addScene('ultima',           ultimaScene());
+  addScene('exotics',          exoticsScene());
+  addScene('desk',             deskScene());
+  addScene('dubai',            dubaiScene());
+  addScene('sweatersbagpen',   sweatersBagPenScene());
+  addScene('frags',            fragsScene());
+  addScene('underglow',        underglowScene());
+  addScene('dji',              djiScene());
+  addScene('embody',           embodyScene());
+  addScene('poloTrousers',     poloTrousersScene());
+  addScene('fingears',         fingearsScene());
+  addScene('pwatch',           pwatchScene());
+  addScene('audioSoft',        audioSoftScene());
+  addScene('gemini',           geminiScene());
+  addScene('bonsai',           bonsaiScene());
+  addScene('closer',           closerScene());
+
+  // Integrate the special chrome→glass motif between S63 and watch
+  addScene('car→watch',        carToWatchWipe(),     CONFIG.OVERLAP_BEATS * 0.7);
 
   /* ----------------------------------------------------------
-     PRELOAD (OPTIONAL: FILL WITH USED ASSETS)
+     PRELOAD (OPTIONAL FOCUSED LIST)
   ---------------------------------------------------------- */
-  const preloadList = []; // For perfection, include only actually-used image URLs
+  const preloadList = []; // Fill with key hero images if desired
 
   function preloadImages(list) {
     if (!list || !list.length) return Promise.resolve();
@@ -901,13 +1635,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ----------------------------------------------------------
-     START — SCROLLTRIGGER + LIGHT + PARALLAX SYNC
+     START — SCROLLTRIGGER + LIGHT/PARALLAX SYNC
   ---------------------------------------------------------- */
   async function start() {
     try {
       await Promise.race([
         preloadImages(preloadList),
-        new Promise(res => setTimeout(res, 1000))
+        new Promise(res => setTimeout(res, 900))
       ]);
     } catch (e) {
       console.warn('[BlakeReel] Preload warning', e);
@@ -918,8 +1652,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const total = reel.totalDuration() || 12;
-    const scrollDistance =
-      total * (vh() * CONFIG.MASTER_SCROLL_DENSITY);
+    const scrollDistance = total * (vh() * CONFIG.MASTER_SCROLL_DENSITY);
 
     ScrollTrigger.create({
       animation: reel,
@@ -934,18 +1667,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       onLeaveBack: () => { document.body.style.overflow = 'auto'; },
       onUpdate: (self) => {
         const p = self.progress;
-        // Global light mood: blend based on position in reel
         let mood = 'chrome';
         if (p > 0.18 && p < 0.42) mood = 'chrome';
-        else if (p >= 0.42 && p < 0.6) mood = 'fabric';
-        else if (p >= 0.6 && p < 0.8) mood = 'glass';
+        else if (p >= 0.42 && p < 0.65) mood = 'fabric';
+        else if (p >= 0.65 && p < 0.88) mood = 'glass';
         else mood = 'chrome';
 
         Light.update(p, mood);
         Parallax.update(p);
-      },
-      onRefresh: () => {
-        // Keep layout/scroll mapping tight
       }
     });
 
@@ -953,7 +1682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ----------------------------------------------------------
-     MICRO INTERACTIONS — CONSISTENT SPRING FEEL
+     MICRO INTERACTIONS
   ---------------------------------------------------------- */
   function initInteractions() {
     const interactiveElements = $$('.btn, [data-interactive]');
@@ -1022,7 +1751,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     });
 
-    // Nav morph on scroll
     const nav = $('.nav');
     if (nav) {
       window.addEventListener('scroll', () => {
@@ -1066,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ----------------------------------------------------------
-     ADAPTIVE VARIANT HOOK
+     VARIANT FLAG
   ---------------------------------------------------------- */
   (function applyVariant() {
     if (CONFIG.VARIANT === 'lite') {
@@ -1083,5 +1811,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   initInteractions();
   initPerformance();
 
-  console.log('🎬 Blake — Ultra Cinematic Scroll Film Initialized');
+  console.log('🎬 Blake — Ultra Cinematic Scroll Film Initialized (All scenes wired)');
 });
